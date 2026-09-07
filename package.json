@@ -1,0 +1,63 @@
+{
+	"name": "parcellaire",
+	"version": "0.1.0",
+	"description": "Les donnees publiques d'une parcelle francaise, et le calcul de son plan : Base Adresse Nationale, cadastre de l'IGN, Referentiel National des Batiments, fonds de la DGFiP et de l'IGN.",
+	"license": "MIT",
+	"author": "Florian Mousseau <florian.mousseau@gmail.com>",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/florianmousseau/parcellaire.git"
+	},
+	"keywords": [
+		"cadastre",
+		"parcelle",
+		"adresse",
+		"ban",
+		"urbanisme",
+		"france",
+		"ign",
+		"dgfip"
+	],
+	"type": "module",
+	"engines": {
+		"node": ">=20"
+	},
+	"files": [
+		"dist"
+	],
+	"exports": {
+		"./ban": "./dist/ban.js",
+		"./bati": "./dist/bati.js",
+		"./cadastre": "./dist/cadastre.js",
+		"./casse": "./dist/casse.js",
+		"./cotes": "./dist/cotes.js",
+		"./fonds": "./dist/fonds.js",
+		"./francais": "./dist/francais.js",
+		"./geometrie": "./dist/geometrie.js",
+		"./lambert": "./dist/lambert.js",
+		"./plan": "./dist/plan.js",
+		"./reseau": "./dist/reseau.js",
+		"./vue": "./dist/vue.js"
+	},
+	"scripts": {
+		"build": "tsc -p tsconfig.build.json",
+		"prepare": "tsc -p tsconfig.build.json",
+		"check": "tsc --noEmit",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"lint": "eslint . --max-warnings 0",
+		"test": "node --test src/*.test.ts",
+		"gate": "npm run format:check && npm run lint && npm run check && npm run test"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@types/node": "^26.4.1",
+		"eslint": "^10.9.1",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-sonarjs": "^4.2.0",
+		"globals": "^17.12.0",
+		"prettier": "^3.9.6",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.69.0"
+	}
+}
