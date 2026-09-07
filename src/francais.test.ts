@@ -18,12 +18,13 @@ test("l'article d'une commune se lit dans son nom", () => {
  * CONSOMMATEUR, PAS ICI.
  *
  * « Chaque departement servi porte son article, et aucun de plus » demande la
- * liste des departements REELLEMENT servis, qui est generee depuis l API Geo
- * de l Etat et vit dans le site, pas dans ce paquet. Un paquet qui embarquerait
+ * liste des departements REELLEMENT servis. Elle est generee depuis l'API Geo
+ * de l'Etat et vit dans le site, pas dans ce paquet : un paquet qui embarquerait
  * sa propre copie de cette liste mesurerait sa table contre elle-meme.
  *
  * Voir `src/lib/articles-des-departements.test.ts` chez aucadastre.
  */
+
 test('les quatre formes attendues, sur les cas qui les distinguent', () => {
 	// Masculin, feminin, pluriel, elision : les quatre, et un nom sans article.
 	assert.equal(duDepartement('59'), 'du Nord');

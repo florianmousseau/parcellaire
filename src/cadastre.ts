@@ -260,53 +260,142 @@ export function libelleParcelle(p: Parcelle): string {
 export const sectionLisible = (section: string): string => section.replace(/^0(?=[A-Z])/, '');
 
 /**
+ * Une parcelle de l'adresse, avec ce qui la rattache a elle.
+ *
+ * `part` est la portion du BATIMENT posee dessus, telle que le referentiel des
+ * batiments la mesure ; `declaree` dit que la Base Adresse Nationale nomme
+ * cette parcelle pour ce numero. Les deux sont affiches : une part de 12 % et
+ * une declaration ne se lisent pas pareil, et le lecteur a le droit de juger.
+ */
+export interface ParcelleDeLAdresse {
+	readonly parcelle: Parcelle;
+	readonly part: number | null;
+	readonly declaree: boolean;
+}
+
+/**
  * Comment la parcelle a ete rattachee a l'adresse.
  *
  * Le `par` n'est pas un detail d'implementation : c'est ce que les surfaces
- * DISENT au lecteur, et les trois reponses n'ont pas la meme force. La page
+ * DISENT au lecteur, et les quatre reponses n'ont pas la meme force. La page
  * ecrit « Parcelle », « Parcelle du bâtiment » ou « Parcelle la plus proche »
  * selon ce champ, et le jumeau machine la meme chose.
+ *
+ * `autres` porte les parcelles SUPPLEMENTAIRES du meme numero, la principale
+ * exclue : une maison s'etale, et une adresse en couvre souvent deux.
  */
-export type Rattachement =
-	| { readonly parcelle: Parcelle; readonly par: 'point' }
-	| { readonly parcelle: Parcelle; readonly par: 'batiment' }
-	| { readonly parcelle: Parcelle; readonly par: 'bord'; readonly metres: number };
+export type Rattachement = {
+	readonly parcelle: Parcelle;
+	readonly par: 'point' | 'batiment' | 'declaree' | 'bord';
+	/** La distance au bord, uniquement quand `par` vaut `bord`. */
+	readonly metres?: number;
+	readonly autres: readonly ParcelleDeLAdresse[];
+	/** La part du batiment posee sur la parcelle principale, si mesuree. */
+	readonly part: number | null;
+};
+
+/** La parcelle d'un identifiant, parmi celles deja chargees. */
+const parIdentifiant = (parcelles: readonly Parcelle[], idu: string): Parcelle | undefined =>
+	parcelles.find((p) => p.idu === idu);
 
 /**
- * QUELLE PARCELLE EST CELLE DE CETTE ADRESSE, en un seul endroit.
+ * QUELLES PARCELLES SONT CELLES DE CETTE ADRESSE, en un seul endroit.
  *
  * Cette decision a vecu en DEUX exemplaires jusqu'au 2026-09-06 - la page de
  * voie et `lib/dossiers.ts`, qui sert l'API et le jumeau machine - et les deux
  * copies n'ont pas ete corrigees ensemble. Elle vit ici, et les deux surfaces
  * l'appellent.
  *
- * Trois etages, du plus sur au plus faible :
+ * UNE ADRESSE EN COUVRE SOUVENT DEUX, et la page n'en servait qu'une jusqu'au
+ * 2026-09-07. Florian : *« le 22 rue Emile Chaillou a Trelaze a deux parcelles,
+ * 525 et 526. Ma femme m'a dit que le cadastre le sait »*. Il le sait par deux
+ * chemins, et il fallait les deux : le referentiel des batiments mesure la part
+ * du batiment posee sur chaque parcelle (AD 525 83,9 %, AD 526 11,7 %, AD 984
+ * 4,5 % - la troisieme est un debord, `PART_MINIMALE` la coupe), et la Base
+ * Adresse Nationale DECLARE AD 526 pour ce numero. La reponse est leur union.
+ *
+ * Quatre etages pour la principale, du plus sur au plus faible :
  *
  * 1. `point` - une parcelle contient le point de l'adresse. Aucune hypothese.
- * 2. `batiment` - le referentiel des batiments donne le batiment de CE numero,
- *    et une parcelle le porte. C'est la reponse que le lecteur cherche quand le
+ * 2. `batiment` - le referentiel donne le batiment de CE numero et les
+ *    parcelles qu'il couvre. C'est la reponse que le lecteur cherche quand le
  *    point de l'adresse est pose sur la chaussee, ce qui est le cas ordinaire.
- * 3. `bord` - la plus proche, mesuree a son BORD, avec sa distance.
+ * 3. `declaree` - la BAN nomme une parcelle pour ce numero et le cadastre la
+ *    connait, mais aucun batiment ne repond : un terrain nu, une adresse neuve.
+ * 4. `bord` - la plus proche, mesuree a son BORD, avec sa distance.
  *
  * Mesure du 2026-09-06 sur quatorze numeros de la rue Pasteur a Vitry : neuf
- * repondent par le batiment, quatre par le point, un seul par le bord.
+ * repondent par le batiment, quatre par le point, un seul par le bord. Mesure
+ * du 2026-09-07 sur 72 adresses de six communes : 11 en couvrent plusieurs.
  */
 export function rattacherLaParcelle(
 	auPoint: Parcelle | null,
 	autour: readonly Parcelle[],
 	lon: number,
 	lat: number,
-	pointDuBatiment: { readonly lon: number; readonly lat: number } | null
+	batiment: {
+		readonly lon: number;
+		readonly lat: number;
+		readonly parcelles: readonly { readonly idu: string; readonly part: number }[];
+	} | null,
+	/** Ce que la BAN declare pour ce numero, en identifiants cadastraux. */
+	declarees: readonly string[] = []
 ): Rattachement | null {
-	if (auPoint !== null) return { parcelle: auPoint, par: 'point' };
-	if (pointDuBatiment !== null) {
-		const porteuse = parcelleQuiContient(autour, pointDuBatiment.lon, pointDuBatiment.lat);
-		if (porteuse !== null) return { parcelle: porteuse, par: 'batiment' };
+	/*
+	 * TOUT CE QUI PORTE L'ADRESSE, dans l'ordre de la part couverte. La
+	 * declaration de la BAN entre meme sous le seuil : c'est une declaration,
+	 * pas une mesure de recouvrement, et elle designe justement la parcelle que
+	 * la geometrie sous-estime.
+	 */
+	const parts = new Map((batiment?.parcelles ?? []).map((p) => [p.idu, p.part]));
+	const portees: ParcelleDeLAdresse[] = [];
+	const vues = new Set<string>();
+	for (const idu of [...parts.keys(), ...declarees]) {
+		if (vues.has(idu)) continue;
+		const trouvee = parIdentifiant(autour, idu);
+		if (trouvee === undefined) continue;
+		vues.add(idu);
+		portees.push({
+			parcelle: trouvee,
+			part: parts.get(idu) ?? null,
+			declaree: declarees.includes(idu)
+		});
+	}
+	portees.sort((a, b) => (b.part ?? 0) - (a.part ?? 0));
+
+	/** Ce qui reste une fois la principale nommee, dans le meme ordre. */
+	const autres = (principale: Parcelle): ParcelleDeLAdresse[] =>
+		portees.filter((p) => p.parcelle.idu !== principale.idu);
+	const partDe = (p: Parcelle): number | null => parts.get(p.idu) ?? null;
+
+	if (auPoint !== null) {
+		return { parcelle: auPoint, par: 'point', autres: autres(auPoint), part: partDe(auPoint) };
+	}
+	const premiere = portees[0];
+	if (premiere !== undefined) {
+		return {
+			parcelle: premiere.parcelle,
+			par: premiere.part === null ? 'declaree' : 'batiment',
+			autres: autres(premiere.parcelle),
+			part: premiere.part
+		};
+	}
+	if (batiment !== null) {
+		const porteuse = parcelleQuiContient(autour, batiment.lon, batiment.lat);
+		if (porteuse !== null) {
+			return { parcelle: porteuse, par: 'batiment', autres: [], part: null };
+		}
 	}
 	const voisine = parcelleLaPlusProche(autour, lon, lat);
 	return voisine === null
 		? null
-		: { parcelle: voisine.parcelle, par: 'bord', metres: voisine.metres };
+		: {
+				parcelle: voisine.parcelle,
+				par: 'bord',
+				metres: voisine.metres,
+				autres: [],
+				part: null
+			};
 }
 
 /**

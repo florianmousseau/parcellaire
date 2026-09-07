@@ -31,7 +31,6 @@
 		"./cadastre": "./dist/cadastre.js",
 		"./casse": "./dist/casse.js",
 		"./cotes": "./dist/cotes.js",
-		"./fonds": "./dist/fonds.js",
 		"./francais": "./dist/francais.js",
 		"./geometrie": "./dist/geometrie.js",
 		"./lambert": "./dist/lambert.js",

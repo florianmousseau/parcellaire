@@ -28,6 +28,18 @@ export interface Numero {
 	readonly suffixe: string;
 	readonly codePostal: string;
 	readonly point: Point;
+	/**
+	 * LES PARCELLES QUE LA BAN DECLARE POUR CE NUMERO, en identifiants a
+	 * quatorze signes. Vide le plus souvent : mesure du 2026-09-07 sur 72
+	 * adresses de six communes, 24 en portent une, 48 aucune.
+	 *
+	 * C'est une DECLARATION, pas une mesure : quand elle existe, elle vaut plus
+	 * que la geometrie, et `rattacherLaParcelle` la garde meme sous le seuil de
+	 * couverture du batiment. Au 22 rue Emile Chaillou a Trelaze, elle nomme
+	 * AD 526 quand le batiment est surtout sur AD 525 : les deux ensemble sont
+	 * la reponse, et c'est ce que le cadastre sait.
+	 */
+	readonly parcelles: readonly string[];
 }
 
 /** Une boite `[ouest, sud, est, nord]`, telle que la BAN la publie. */
@@ -95,6 +107,30 @@ interface NumeroBrut {
 	suffixe?: unknown;
 	codePostal?: unknown;
 	position?: PointBrut | null;
+	parcelles?: unknown;
+}
+
+/**
+ * L'identifiant cadastral d'une parcelle declaree par la BAN.
+ *
+ * Elle l'ecrit dans la forme des fichiers fonciers - `490353   AD0526` : code
+ * departement, code direction, code commune, prefixe de section, section,
+ * numero. Reconstruire le code INSEE depuis les six premiers signes DEMANDE de
+ * savoir ou couper le departement, et la coupe n'est pas la meme en metropole
+ * et outre-mer : c'est l'erreur que ce releve a d'abord faite, et elle rendait
+ * un identifiant faux qui ne retombait sur aucune parcelle.
+ *
+ * On ne reconstruit donc RIEN : les neuf derniers signes portent le prefixe, la
+ * section et le numero, et l'INSEE est celui de la commune de la page. Un
+ * prefixe en blanc vaut `000`, hors commune fusionnee.
+ */
+export function parcelleDeclaree(brut: unknown, insee: string): string | null {
+	if (typeof brut !== 'string' || brut.length < 9 || insee.length !== 5) return null;
+	const queue = brut.slice(-9);
+	const prefixe = queue.slice(0, 3);
+	const reste = queue.slice(3);
+	if (!/^[0-9A-Z]{2}\d{4}$/.test(reste)) return null;
+	return `${insee}${prefixe.trim() === '' ? '000' : prefixe}${reste}`;
 }
 
 interface VoieBrute {
@@ -157,29 +193,32 @@ export async function voie(id: string): Promise<Voie | null> {
 	const point = pointDe(brut?.position);
 	if (!brut || point === null) return null;
 	const numerosBruts = Array.isArray(brut.numeros) ? (brut.numeros as NumeroBrut[]) : [];
+	const insee = texte(brut.commune?.code);
 	return {
 		id: texte(brut.idVoie, texte(brut.id, id)),
 		nom: texte(brut.nomVoie),
 		point,
 		cadre: cadreDe(brut.displayBBox),
 		commune: {
-			insee: texte(brut.commune?.code),
+			insee,
 			nom: texte(brut.commune?.nom),
 			departement: texte(brut.commune?.departement?.nom)
 		},
 		numeros: numerosBruts
-			.map((n) => {
+			.map((n): Numero | null => {
 				const p = pointDe(n.position);
 				const valeur = nombre(n.numero);
-				return p === null || valeur === null
-					? null
-					: {
-							id: texte(n.id),
-							numero: valeur,
-							suffixe: texte(n.suffixe),
-							codePostal: texte(n.codePostal),
-							point: p
-						};
+				if (p === null || valeur === null) return null;
+				return {
+					id: texte(n.id),
+					numero: valeur,
+					suffixe: texte(n.suffixe),
+					codePostal: texte(n.codePostal),
+					point: p,
+					parcelles: (Array.isArray(n.parcelles) ? (n.parcelles as unknown[]) : [])
+						.map((x) => parcelleDeclaree(x, insee))
+						.filter((x): x is string => x !== null)
+				};
 			})
 			.filter((n): n is Numero => n !== null)
 			.sort((a, b) => a.numero - b.numero || a.suffixe.localeCompare(b.suffixe))

@@ -52,14 +52,18 @@ const METRES_PAR_DEGRE_LAT = 111_320;
 const COTE_MAX = 640;
 
 /**
- * Le dessin des parcelles, la cible en premier plan.
+ * Le dessin des parcelles, les cibles en premier plan.
  *
  * Rend `null` plutot qu'un dessin vide : une figure sans trait est un cadre
  * blanc que le lecteur prend pour une panne d'affichage.
+ *
+ * PLUSIEURS CIBLES, PARCE QU'UNE ADRESSE EN COUVRE SOUVENT DEUX (2026-09-07) :
+ * le 22 rue Emile Chaillou a Trelaze est sur AD 525 et AD 526. Surligner la
+ * seule parcelle principale montrait la moitie du terrain sans le dire.
  */
 export function dessiner(
 	parcelles: readonly Parcelle[],
-	iduCible: string,
+	cibles: string | readonly string[],
 	batiments: readonly Batiment[] = [],
 	/*
 	 * LE CADRE IMPOSE, QUAND C'EST LE LECTEUR QUI CHOISIT CE QU'IL REGARDE.
@@ -73,6 +77,10 @@ export function dessiner(
 	cadreImpose?: Cadre
 ): Dessin | null {
 	if (parcelles.length === 0) return null;
+	/* Une chaine vide ne vise rien : c'est ce que passe la page d'une voie. */
+	const visees = new Set(
+		(typeof cibles === 'string' ? [cibles] : cibles).filter((idu) => idu !== '')
+	);
 	const latitudes = parcelles.flatMap((p) => p.contour.flatMap((a) => a.map(([, lat]) => lat)));
 	if (latitudes.length === 0) return null;
 	const latMoyenne = latitudes.reduce((s, v) => s + v, 0) / latitudes.length;
@@ -102,7 +110,7 @@ export function dessiner(
 
 	const traces = parcelles.map((p) => ({
 		idu: p.idu,
-		cible: p.idu === iduCible,
+		cible: visees.has(p.idu),
 		d: p.contour.map(chemin).join('')
 	}));
 
@@ -125,6 +133,101 @@ export function dessiner(
 		traces: [...traces.filter((t) => !t.cible), ...traces.filter((t) => t.cible)]
 	};
 }
+
+/*
+ * ============================================================================
+ * CADRER SUR L'OBJET, PAS SUR UNE FENETRE GEOGRAPHIQUE
+ * ============================================================================
+ *
+ * Un cadre pris a une demi-largeur ronde - 25 m, 50 m - montre la parcelle a
+ * la taille que le hasard lui donne : une parcelle de 24 m dans un cadre de
+ * 50 en occupe la moitie, et ses cotes s'ecrivent dans ce qui reste. C'est ce
+ * qui rendait le plan cote d'aucadastre moins clair que celui d'edifiable,
+ * qui, lui, coupe sur la parcelle et lui laisse une marge CONSTANTE.
+ *
+ * Cette fonction rend le cadre qui pose l'objet au milieu d'une marge fixe en
+ * PIXELS, quelle que soit sa taille au sol et quelle que soit sa forme. La
+ * marge en degres se deduit de l'echelle, et l'echelle de la marge : en notant
+ * L le plus grand cote de l'objet et M la marge voulue,
+ *
+ *     m x COTE_MAX / (L + 2m) = M   donc   m = M x L / (COTE_MAX - 2M)
+ *
+ * ce qui fait tomber `dessiner` sur exactement M pixels de chaque bord.
+ */
+export function cadreSurLObjet(
+	boite: Cadre,
+	/** La latitude ou l'on travaille : un degre de longitude n'y vaut pas 111 km. */
+	latitude: number,
+	margePixels: number
+): Cadre {
+	const kx = Math.cos((latitude * Math.PI) / 180);
+	const largeCorrigee = (boite.est - boite.ouest) * kx;
+	const haut = boite.nord - boite.sud;
+	const grandCote = Math.max(largeCorrigee, haut);
+	/* Une marge qui mange la moitie du dessin ne laisse plus rien a dessiner. */
+	const marge = Math.min(margePixels, COTE_MAX / 2 - 1);
+	if (grandCote <= 0 || marge <= 0 || kx === 0) return boite;
+	const m = (marge * grandCote) / (COTE_MAX - 2 * marge);
+	return {
+		ouest: boite.ouest - m / kx,
+		est: boite.est + m / kx,
+		sud: boite.sud - m,
+		nord: boite.nord + m
+	};
+}
+
+/**
+ * LA MARGE AUTOUR DES PARCELLES D'UNE ADRESSE, en pixels du dessin.
+ *
+ * Florian, le 2026-09-07 : *« la carte doit etre mieux zoomee sur la et les
+ * parcelles et mieux centree ; on ne voit pas de quelle parcelle on parle,
+ * c'est trop petit »*. Il avait raison, et le defaut n'etait pas le zoom mais
+ * la FACON de cadrer : la page ouvrait une fenetre de taille fixe - 165 m -
+ * centree sur le point de l'ADRESSE, qui est pose au bord de la chaussee. La
+ * parcelle y tombait donc decentree, a la taille que son hasard lui donnait.
+ *
+ * Releve du 2026-09-07 sur six adresses de six communes, part du grand cote du
+ * dessin occupee par la ou les parcelles :
+ *
+ *     Bordeaux 7 %   Muret 17 %   Trelaze 19 %   Morlaix 20 %
+ *     Vitry 30 %     Renaze 46 %
+ *
+ * Cadre sur l'objet, cette part ne depend plus du hasard : 120 px de marge sur
+ * les 640 du dessin laissent la parcelle occuper **63 %** du grand cote, et
+ * une quinzaine de metres de tissu autour - assez pour voir la rue et les
+ * voisines, ce qui est ce qui permet de se reconnaitre. Plus serre, la page ne
+ * situerait plus rien ; plus large, on revient au timbre-poste.
+ */
+export const MARGE_DE_L_ADRESSE = 120;
+
+/**
+ * Le rectangle qui contient toutes ces parcelles, ou `null` si aucune n'a de
+ * contour. C'est ce qu'on donne a `cadreSurLObjet` pour cadrer une adresse.
+ */
+export function boiteDesParcelles(parcelles: readonly Parcelle[]): Cadre | null {
+	let ouest = Infinity;
+	let est = -Infinity;
+	let sud = Infinity;
+	let nord = -Infinity;
+	for (const p of parcelles) {
+		for (const anneau of p.contour) {
+			for (const [lon, lat] of anneau) {
+				ouest = Math.min(ouest, lon);
+				est = Math.max(est, lon);
+				sud = Math.min(sud, lat);
+				nord = Math.max(nord, lat);
+			}
+		}
+	}
+	return Number.isFinite(ouest) && Number.isFinite(sud) ? { ouest, sud, est, nord } : null;
+}
+
+/** Vrai quand le premier rectangle tient tout entier dans le second. */
+export const tientDans = (petit: Cadre, grand: Cadre): boolean =>
+	petit.ouest >= grand.ouest &&
+	petit.est <= grand.est &&
+	petit.sud >= grand.sud &&
+	petit.nord <= grand.nord;
 
 /** Une longueur ronde qui tient dans le tiers du dessin, pour l'echelle graphique. */
 export function pasEchelle(largeurMetres: number): number {

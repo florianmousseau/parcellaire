@@ -19,13 +19,20 @@ Extraits de [aucadastre.fr](https://aucadastre.fr) et
 | `parcellaire/bati`      | Les bâtiments du Référentiel National des Bâtiments                   |
 | `parcellaire/plan`      | Le tracé d'un plan cadastral, en SVG, calculé sur le serveur          |
 | `parcellaire/cotes`     | La longueur de chaque limite d'une parcelle, et sa nature             |
-| `parcellaire/fonds`     | Les adresses des fonds : cadastre DGFiP, photo aérienne, plan IGN     |
 | `parcellaire/vue`       | Le zoom et le déplacement d'un plan, par l'adresse                    |
 | `parcellaire/geometrie` | Anneaux, appartenance d'un point, distance à un bord                  |
 | `parcellaire/lambert`   | WGS 84 vers Lambert-93, distances et aires en mètres                  |
 | `parcellaire/reseau`    | Un `fetch` qui met en cache et qui abandonne au bout du temps imparti |
 | `parcellaire/casse`     | La casse d'un nom propre français                                     |
 | `parcellaire/francais`  | Les articles : « de Nantes », « du Mans », « de la Mayenne »          |
+
+### Ce qui n'a pas encore pu partir
+
+`fonds.ts` et `cadastre-gouv.ts`, qui fabriquent les adresses des fonds de
+carte, lisent la liste MOISSONNEE des communes que le service de la DGFiP sert
+vraiment. Cette liste est une donnee, elle vit dans le site. Les faire voyager
+demande de leur passer cette liste en parametre, et une extraction ne doit pas
+changer une signature en passant : ce sera son propre chantier.
 
 ## Ce qu'il ne contient pas
 

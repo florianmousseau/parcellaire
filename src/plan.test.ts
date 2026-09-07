@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dessiner, pasEchelle } from './plan.ts';
+import { cadreSurLObjet, dessiner, pasEchelle } from './plan.ts';
+import type { Cadre } from './plan.ts';
 import type { Parcelle } from './cadastre.ts';
 
 const carre = (idu: string, lon: number, lat: number, cote: number): Parcelle => ({
@@ -18,6 +19,20 @@ const carre = (idu: string, lon: number, lat: number, cote: number): Parcelle =>
 			[lon + cote, lat + cote],
 			[lon, lat + cote],
 			[lon, lat]
+		]
+	]
+});
+
+/** Un rectangle quelconque, pour eprouver le cadrage sur des formes extremes. */
+const lame = (idu: string, b: Cadre): Parcelle => ({
+	...carre(idu, b.ouest, b.sud, 0.0001),
+	contour: [
+		[
+			[b.ouest, b.sud],
+			[b.est, b.sud],
+			[b.est, b.nord],
+			[b.ouest, b.nord],
+			[b.ouest, b.sud]
 		]
 	]
 });
@@ -58,4 +73,41 @@ test('le pas de l echelle tient dans le tiers du dessin', () => {
 	assert.equal(pasEchelle(300), 100);
 	assert.equal(pasEchelle(12), 5);
 	assert.equal(pasEchelle(1), 5);
+});
+
+test('le cadre sur l objet laisse la MEME marge en pixels, quelle que soit la forme', () => {
+	/*
+	 * C'est toute la difference entre un plan cote lisible et un plan cote ou la
+	 * parcelle flotte : la marge se compte en PIXELS du dessin, pas en metres au
+	 * sol. Une parcelle carree et une parcelle en lame doivent sortir avec la
+	 * meme bande blanche autour, sinon les cotes de l'une tiennent et celles de
+	 * l'autre se marchent dessus.
+	 */
+	const MARGE = 60;
+	for (const [large, haut] of [
+		[0.0003, 0.0003],
+		[0.0009, 0.0001],
+		[0.0001, 0.0012]
+	] as const) {
+		const boite = { ouest: 2.4, est: 2.4 + large, sud: 48.78, nord: 48.78 + haut };
+		const cadre = cadreSurLObjet(boite, 48.78, MARGE);
+		const dessin = dessiner([lame('a', boite)], 'a', [], cadre);
+		assert.ok(dessin, `${String(large)} x ${String(haut)}`);
+		const kx = Math.cos((48.78 * Math.PI) / 180);
+		const echelle = dessin.largeur / ((cadre.est - cadre.ouest) * kx);
+		const gauche = (boite.ouest - cadre.ouest) * kx * echelle;
+		const bas = (boite.sud - cadre.sud) * (dessin.hauteur / (cadre.nord - cadre.sud));
+		assert.ok(Math.abs(gauche - MARGE) < 1.5, `marge en x : ${String(gauche)}`);
+		assert.ok(Math.abs(bas - MARGE) < 1.5, `marge en y : ${String(bas)}`);
+	}
+});
+
+test('un objet sans etendue rend son cadre tel quel, plutot qu une division par zero', () => {
+	const plat = { ouest: 2.4, est: 2.4, sud: 48.78, nord: 48.78 };
+	assert.deepEqual(cadreSurLObjet(plat, 48.78, 60), plat);
+	// Et une marge absurde ne mange pas tout le dessin.
+	const boite = { ouest: 2.4, est: 2.4004, sud: 48.78, nord: 48.7804 };
+	const enorme = cadreSurLObjet(boite, 48.78, 10_000);
+	assert.ok(enorme.est - enorme.ouest > boite.est - boite.ouest);
+	assert.ok(Number.isFinite(enorme.est - enorme.ouest));
 });

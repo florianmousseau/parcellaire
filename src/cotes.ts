@@ -44,6 +44,7 @@
 import {
 	aire,
 	auContour,
+	auSegment,
 	aLaLigne,
 	distance,
 	echantillonner,
@@ -64,8 +65,10 @@ export interface Voie {
 }
 
 export interface Cote {
-	/** Le rang du cote dans l'anneau : il sert d'ancre a l'ecran. */
+	/** Le rang du PREMIER sommet du cote dans l'anneau : il sert d'ancre. */
 	readonly rang: number;
+	/** Le rang du DERNIER sommet : un cote peut couvrir plusieurs segments. */
+	readonly finRang: number;
 	readonly a: PointL93;
 	readonly b: PointL93;
 	readonly longueur: number;
@@ -95,6 +98,28 @@ export const LARGEUR_PAR_DEFAUT = 5;
 
 /** Un cote plus court que ca ne se cote pas : le chiffre serait illisible. */
 export const COTE_MINIMALE = 1.2;
+
+/*
+ * DE COMBIEN UN SOMMET PEUT S'ECARTER DE LA DROITE SANS COUPER LE COTE.
+ *
+ * Signale par Florian le 2026-09-06 : *« on comprend pas pourquoi il y a
+ * plusieurs cotes sur une meme longueur, puis plus de cote, puis re une cote »*.
+ * Il a raison, et ce n'est pas un defaut d'affichage : le trait cadastral pose
+ * des sommets intermediaires SUR une limite droite - une maison de vingt metres
+ * a Vitry en portait douze la ou l'oeil en voit quatre. Chaque morceau recevait
+ * sa cote, et les plus courts, ecartes, laissaient des trous.
+ *
+ * On fusionne donc les segments qui suivent la meme droite, et la mesure est
+ * celle de la limite ENTIERE - c'est elle que le lecteur compare a son metre.
+ * Le critere est la distance des sommets intermediaires a la corde, pas un
+ * angle : vingt petits virages de trois degres font un vrai coin, et un seuil
+ * d'angle les laisserait passer un par un.
+ *
+ * Vingt-cinq centimetres : le bruit du trait cadastral se compte en decimetres,
+ * un decrochement de mur se compte en dizaines de centimetres au moins. A
+ * rederiver si le corpus change de nature.
+ */
+export const TOLERANCE_ALIGNEMENT = 0.25;
 
 /** La part d'un cote qu'une voisine doit longer pour en faire une separative. */
 const PART_SEPARATIVE = 0.7;
@@ -182,6 +207,36 @@ function partPartagee(
  * d'angle du plan cadastral, ils ne portent pas de regle et leur cote se
  * chevaucherait avec ses voisines.
  */
+/**
+ * Les limites de l'anneau, un segment par LIMITE et non par sommet.
+ *
+ * Rend les couples de rangs `[debut, fin]` : les sommets intermediaires qui
+ * restent a moins de `TOLERANCE_ALIGNEMENT` de la corde sont avales.
+ */
+export function limitesDeLAnneau(anneau: readonly PointL93[]): readonly [number, number][] {
+	const limites: [number, number][] = [];
+	let debut = 0;
+	while (debut < anneau.length - 1) {
+		let fin = debut + 1;
+		while (fin < anneau.length - 1) {
+			const a = anneau[debut] as PointL93;
+			const candidat = anneau[fin + 1] as PointL93;
+			let aligne = true;
+			for (let k = debut + 1; k <= fin; k++) {
+				if (auSegment(anneau[k] as PointL93, a, candidat) > TOLERANCE_ALIGNEMENT) {
+					aligne = false;
+					break;
+				}
+			}
+			if (!aligne) break;
+			fin += 1;
+		}
+		limites.push([debut, fin]);
+		debut = fin;
+	}
+	return limites;
+}
+
 export function cotesDeLaParcelle(
 	anneau: readonly PointL93[],
 	voies: readonly Voie[],
@@ -189,9 +244,9 @@ export function cotesDeLaParcelle(
 ): readonly Cote[] {
 	const horaire = estHoraire(anneau);
 	const cotes: Cote[] = [];
-	for (let i = 0; i < anneau.length - 1; i++) {
+	for (const [i, fin] of limitesDeLAnneau(anneau)) {
 		const a = anneau[i] as PointL93;
-		const b = anneau[i + 1] as PointL93;
+		const b = anneau[fin] as PointL93;
 		const longueur = distance(a, b);
 		if (longueur < COTE_MINIMALE) continue;
 		const dehors = normaleSortante(a, b, horaire);
@@ -206,6 +261,7 @@ export function cotesDeLaParcelle(
 
 		cotes.push({
 			rang: i,
+			finRang: fin,
 			a,
 			b,
 			longueur,

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
 	cotesDeLaParcelle,
+	limitesDeLAnneau,
 	mesurerLeContour,
 	LARGEUR_PAR_DEFAUT,
 	MARGE_DE_BORD,
@@ -170,4 +171,62 @@ test('sans contenance connue, aucun écart n est invente', () => {
 	// Une source muette ne se remplace pas par un zero : le zero se lirait comme
 	// « le cadastre et la mesure tombent d'accord ».
 	assert.equal(mesurerLeContour(PARCELLE, [], [], null).ecart, null);
+});
+
+test('les sommets poses SUR une limite droite ne la coupent pas en morceaux', () => {
+	/*
+	 * Signale par Florian le 2026-09-06 : « on comprend pas pourquoi il y a
+	 * plusieurs cotes sur une meme longueur ». Le trait cadastral pose des
+	 * sommets intermediaires sur une limite droite - une maison de vingt metres
+	 * a Vitry en portait douze la ou l'oeil en voit quatre.
+	 */
+	const bruitee: PointL93[] = [
+		[0, 0],
+		[7, 0.05],
+		[13, -0.04],
+		[20, 0],
+		[20, 30],
+		[0, 30],
+		[0, 0]
+	];
+	const cotes = cotesDeLaParcelle(bruitee, [], []);
+	assert.equal(cotes.length, 4, 'quatre limites, pas six');
+	const sud = cotes.find((c) => c.rang === 0);
+	assert.ok(sud !== undefined);
+	assert.equal(sud.finRang, 3, 'le cote sud couvre les trois segments');
+	assert.ok(Math.abs(sud.longueur - 20) < 0.01, String(sud.longueur));
+});
+
+test('un vrai coin coupe, meme s il se prend en plusieurs petits virages', () => {
+	// Vingt virages de trois degres font un coin : le critere est la distance a
+	// la corde, jamais un angle, sinon ils passeraient un par un.
+	const arrondie: PointL93[] = [
+		[0, 0],
+		[20, 0],
+		[22, 2],
+		[23, 6],
+		[23, 30],
+		[0, 30],
+		[0, 0]
+	];
+	const cotes = cotesDeLaParcelle(arrondie, [], []);
+	assert.ok(cotes.length >= 5, `le coin arrondi ne doit pas etre avale (${String(cotes.length)})`);
+});
+
+test('la fusion garde les rangs pour que le dessin retrouve ses sommets', () => {
+	const droite: PointL93[] = [
+		[0, 0],
+		[10, 0],
+		[20, 0],
+		[20, 30],
+		[0, 30],
+		[0, 0]
+	];
+	const limites = limitesDeLAnneau(droite);
+	assert.deepEqual(limites[0], [0, 2], 'les deux premiers segments se fondent');
+	// Chaque limite reprend la ou la precedente s'arrete : aucun sommet perdu.
+	for (let i = 1; i < limites.length; i++) {
+		assert.equal(limites[i]?.[0], limites[i - 1]?.[1]);
+	}
+	assert.equal(limites.at(-1)?.[1], droite.length - 1);
 });
