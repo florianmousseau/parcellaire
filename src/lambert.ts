@@ -23,12 +23,11 @@
  * C'est ce qui permet d'affirmer que l'ecart de 0,85 % avec la contenance
  * cadastrale vient du CADASTRE, et pas de nous.
  *
- *
- * VENU D EDIFIABLE, ou il est en production depuis le 2026-09-06. Les deux
- * sites mesurent la meme chose sur les memes parcelles : ce fichier et
- * `cotes.ts` sont les DEUX premiers morceaux du composant de plan partage, et
- * ils sont volontairement identiques a la ligne pres pour que l extraction soit
- * une suppression, pas une reecriture.
+ * NE PLUS LE RECOPIER. Ce fichier a vecu en double, ecrit chez edifiable le
+ * 2026-09-06 puis porte chez aucadastre a la ligne pres, exactement pour que
+ * son extraction soit une suppression et pas une reecriture. C'est fait le
+ * 2026-09-07 : les deux sites le lisent ici. Une troisieme copie ferait diverger
+ * deux mesures qui doivent rendre le meme metre sur la meme parcelle.
  *
  * Parametres : IGN, notice NTG-71, RGF93 / Lambert-93.
  */
