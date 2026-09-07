@@ -5,8 +5,14 @@
 # apply: nothing is billed, and a public package that anybody can read deserves
 # a door that is not the memory of whoever pushed last.
 #
-# Node 20 and not the version this was written on: the package claims
-# `engines: node >=20`, and a claim nothing runs is a wish.
+# Node 24, and NOT the `engines: node >=20` floor the package claims - the two
+# speak for different people, and the first run of this workflow proved it.
+# `engines` speaks for a CONSUMER, who imports the built `dist/*.js`: Node 20
+# runs those. The `test` script speaks for this repo, and it hands
+# `src/*.test.ts` straight to `node --test`, which needs a runtime that strips
+# types - Node 20 answers ERR_UNKNOWN_FILE_EXTENSION on all eleven files.
+# Pinning the runner to the engines floor would have made the gate red for a
+# reason no consumer will ever meet.
 name: gate
 
 on:
@@ -39,7 +45,7 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       # `--ignore-scripts` blocks install-time lifecycle scripts: a compromised

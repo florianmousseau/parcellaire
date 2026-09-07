@@ -49,7 +49,12 @@ warnings), `check` (`tsc --noEmit`), `test` (the node test runner over
 `src/*.test.ts`). It must be green before a push.
 
 **`.github/workflows/gate.yml` runs the same thing on every PR and on `main`,
-and here that costs nothing** - Actions minutes are free on a public
+on Node 24 and not on the `engines` floor** - `engines: node >=20` speaks for a
+consumer importing the built `dist/*.js`, while `npm test` hands
+`src/*.test.ts` straight to `node --test` and needs a runtime that strips
+types. Do not "fix" the runner down to 20; it was measured red there.
+
+**And here the workflow costs nothing** - Actions minutes are free on a public
 repository. Do not copy the local-only arrangement of `aucadastre` and
 `edifiable` into this repo: theirs is a private-repo billing decision, not a
 principle.
