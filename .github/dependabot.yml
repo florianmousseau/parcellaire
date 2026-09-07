@@ -1,0 +1,32 @@
+# Les ALERTES de securite et les PR de mise a jour sont deux choses distinctes.
+# Les alertes disent qu'une version est vulnerable ; ce fichier-ci ouvre la PR
+# qui la corrige.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    # Une PR pour tout le mineur et le patch, une PR par MAJEURE. Ce depot ne
+    # porte que des outils de compilation et de controle - typescript, eslint,
+    # prettier - dont une majeure change ce que la gate accepte : elle se joue
+    # en local avant d'etre fusionnee, donc elle ne doit jamais arriver melangee
+    # a des montees anodines qui, elles, passent seules.
+    groups:
+      mineur-et-patch:
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: chore
+
+  # Aucun workflow n'existe ici aujourd'hui. L'entree est posee quand meme : le
+  # jour ou un workflow arrive, ses actions sont deja suivies.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore

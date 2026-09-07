@@ -1,0 +1,9 @@
+# LF everywhere in the working tree, on every machine.
+#
+# The blobs in this repository are already LF; without this file, a clone on
+# Windows with the usual `core.autocrlf=true` writes them out as CRLF, and
+# `npm run gate` then fails `prettier --check` on 31 of 33 files - measured on
+# 2026-09-07, on a fresh worktree. A gate that cannot go green locally is worth
+# no more than no gate at all, and the developer who meets it goes hunting for
+# a fault they did not cause.
+* text=auto eol=lf
