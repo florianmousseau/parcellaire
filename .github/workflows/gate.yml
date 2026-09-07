@@ -1,0 +1,68 @@
+# The whole gate in one job.
+#
+# This repository is PUBLIC, so Actions minutes are free here. The cost
+# argument that keeps aucadastre and edifiable on a local-only gate does not
+# apply: nothing is billed, and a public package that anybody can read deserves
+# a door that is not the memory of whoever pushed last.
+#
+# Node 24, and NOT the `engines: node >=20` floor the package claims - the two
+# speak for different people, and the first run of this workflow proved it.
+# `engines` speaks for a CONSUMER, who imports the built `dist/*.js`: Node 20
+# runs those. The `test` script speaks for this repo, and it hands
+# `src/*.test.ts` straight to `node --test`, which needs a runtime that strips
+# types - Node 20 answers ERR_UNKNOWN_FILE_EXTENSION on all eleven files.
+# Pinning the runner to the engines floor would have made the gate red for a
+# reason no consumer will ever meet.
+name: gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10 # a hung job would otherwise run until the 6h ceiling
+    steps:
+      # Actions are pinned to a commit, with the tag in a comment. A tag is a
+      # pointer its owner can move: `@v7` today and `@v7` tomorrow can be
+      # different code running with this repository's token, and nothing in the
+      # diff would say so. Dependabot moves these pins and updates the comment.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # Nothing here pushes. Left on, the token stays in .git/config for
+          # every later step to find, including anything npm decides to run.
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+
+      # `--ignore-scripts` blocks install-time lifecycle scripts: a compromised
+      # transitive dependency gets to run arbitrary code on `npm ci` otherwise,
+      # before a single test has started. It also skips this package's own
+      # `prepare`, which builds - the gate typechecks with `tsc --noEmit` and
+      # does not need dist.
+      - run: npm ci --ignore-scripts
+
+      # format check, lint, typecheck, tests.
+      - run: npm run gate
+
+      # Only what a consumer would actually install. The package ships no
+      # runtime dependency, so this passes on an empty set today - which is the
+      # point: the day one is added, this is already watching it. `--omit=dev`
+      # because an advisory on a linter cannot reach anybody who installs this
+      # package, and a gate that goes red for something nobody can be hurt by
+      # gets ignored, then removed.
+      - name: audit what a consumer installs
+        run: npm audit --omit=dev --audit-level=high
