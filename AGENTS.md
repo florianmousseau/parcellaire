@@ -25,8 +25,9 @@ doubt it is a patch.
 
 - **One branch model: `main`, and nothing else.** No `develop`, no gitflow. The
   cockpit's `docs/gitflow.md` is the authority for every repo of the parc and it
-  does not list this one; do not create a long-lived branch here without
-  changing that file first.
+  lists this one among the LIBRARIES that have no `develop`, alongside
+  `selfstore`, `truecopy`, `asset-notation-js` and `spec`. Do not create a
+  long-lived branch here without changing that file first.
 - Work goes through a branch and a PR, never a direct push to `main`.
 - **The repo is public, so a PR is merged only on checks that are PRESENT and
   PASSED** - never on a PR that carries no check at all. That is the whole
