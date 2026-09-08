@@ -98,6 +98,26 @@ test('la photo part en JPEG, le plan IGN en PNG', () => {
 	assert.equal(parametres(urlDuFond('plan', CADRE, 100, 100) ?? '').get('FORMAT'), 'image/png');
 });
 
+test('la photo de 1950 part en PNG, parce que sa couche refuse le JPEG', () => {
+	/*
+	 * Mesure du 2026-09-08 : `ORTHOIMAGERY.ORTHOPHOTOS.1950-1965` est servie en
+	 * quatre bandes et repond 400 *« Used data format (4 band(s) UINT8) and
+	 * expected output format (image/jpeg) are not consistent »*. Un cadre vide,
+	 * sans message. C'est une photo qui ne se demande pas comme l'autre, et ce
+	 * test est la pour que personne ne l'aligne sur elle.
+	 */
+	const url = urlDuFond('avant', CADRE, 100, 100);
+	assert.ok(url !== null);
+	assert.equal(parametres(url).get('FORMAT'), 'image/png');
+	assert.equal(parametres(url).get('LAYERS'), 'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965');
+});
+
+test('le fond de 1950 se demande par son mot, et l inconnu retombe au cadastre', () => {
+	// `?fond=avant` vient de l'URL et voyage dans les liens du site.
+	assert.equal(fondDemande('avant'), 'avant');
+	assert.equal(fondDemande('1950'), 'cadastre');
+});
+
 test('chaque fond dit ce qu il apporte, et nomme son producteur', () => {
 	// Un onglet qui ne dit pas ce qu'il change ne se clique pas, et une image
 	// publique se cite : les deux sont des regles du site, pas des ornements.

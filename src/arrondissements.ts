@@ -39,12 +39,30 @@ const arrondissementDe = (insee: string) => {
 export const estUnArrondissement = (insee: string): boolean => arrondissementDe(insee) !== null;
 
 /**
+ * La commune dont un code est une subdivision, ou le code lui-meme.
+ *
+ * `75102` rend `75056`, `94081` se rend lui-meme. C'est le geste a poser
+ * devant TOUTE source qui ne connait que les trois villes, et il y en a plus
+ * d'une : le plan cadastral (`communeDuCadastre`), et les arretes de
+ * catastrophe naturelle de Georisques, mesures le 2026-09-08 - `75102` rend
+ * zero arrete, `75056` en rend vingt.
+ *
+ * Le piege est d'autant plus vicieux que la MEME API repond a l'arrondissement
+ * sur ses autres points d'entree : la sismicite et le radon ne connaissent, eux,
+ * que `75102` et rendent zero sur `75056`. Il n'y a donc pas de code a choisir
+ * une fois pour toutes - il se choisit source par source.
+ */
+export const communeMere = (insee: string): string => arrondissementDe(insee)?.ville ?? insee;
+
+/**
  * Le code commune sous lequel le cadastre range une parcelle.
  *
  * Le code lu dans l'identifiant partout, SAUF dans les 45 arrondissements, qui
- * n'existent pas au plan cadastral.
+ * n'existent pas au plan cadastral. C'est le cas d'usage qui a fait naitre
+ * `communeMere` ; il garde son nom parce que c'est sous celui-la que les
+ * appels du cadastre se lisent.
  */
-export const communeDuCadastre = (insee: string): string => arrondissementDe(insee)?.ville ?? insee;
+export const communeDuCadastre = (insee: string): string => communeMere(insee);
 
 /**
  * Le nom d'une commune, arrondissement compris.

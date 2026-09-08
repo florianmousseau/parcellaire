@@ -49,7 +49,7 @@ export type SertLePlanDgfip = (insee: string) => boolean;
 
 const SERVEUR = 'https://data.geopf.fr/wms-r/wms';
 
-export type Fond = 'cadastre' | 'cote' | 'photo' | 'plan';
+export type Fond = 'cadastre' | 'cote' | 'photo' | 'plan' | 'avant';
 
 export const FOND_PAR_DEFAUT: Fond = 'cadastre';
 
@@ -124,6 +124,29 @@ export const FONDS: readonly Definition[] = [
 		dit: 'les rues nommées autour',
 		couche: 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2',
 		source: 'IGN, Plan IGN'
+	},
+	{
+		/*
+		 * LA MEME EMPRISE, SOIXANTE-DIX ANS PLUS TOT.
+		 *
+		 * L'IGN sert ses photographies aeriennes historiques comme une couche de
+		 * plus sur le meme serveur : au cadre exact du dessin, le lecteur voit ce
+		 * qu'il y avait a l'adresse avant l'immeuble, le lotissement ou la
+		 * rocade. C'est la seule question de cette liste a laquelle ni le plan ni
+		 * la photo d'aujourd'hui ne repondent.
+		 *
+		 * Les deux autres millesimes du service ont ete mesures le 2026-09-08 :
+		 * `1965-1980` repond partout comme celle-ci, `1980-1995` rend une image
+		 * VIDE de 760 octets sur les points sondes - une couche qui existe aux
+		 * capacites et ne couvre pas. On n'en sert donc qu'une, et c'est la plus
+		 * ancienne, celle qui montre autre chose.
+		 */
+		code: 'avant',
+		intitule: 'Photo aérienne de 1950-1965',
+		nom: '1950',
+		dit: "ce qu'il y avait avant",
+		couche: 'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965',
+		source: 'IGN, photographies aériennes historiques 1950-1965'
 	}
 ];
 
@@ -196,7 +219,17 @@ export function urlDuFond(
 		BBOX: bbox,
 		WIDTH: String(enPixels(largeur)),
 		HEIGHT: String(enPixels(hauteur)),
-		// Le trait du plan IGN se lit mal en JPEG ; la photo, elle, y gagne.
+		/*
+		 * Le trait du plan IGN se lit mal en JPEG ; la photo d'aujourd'hui, elle,
+		 * y gagne.
+		 *
+		 * ET LA PHOTO DE 1950 LE REFUSE, ce qui ne se devine pas : sa couche est
+		 * servie en QUATRE bandes, et le service repond alors 400 *« Used data
+		 * format (4 band(s) UINT8) and expected output format (image/jpeg) are
+		 * not consistent »*. Un cadre vide, pas un message. Elle est donc la
+		 * seule photo de cette liste a partir en PNG, et ce n'est pas un oubli
+		 * a corriger.
+		 */
 		FORMAT: fond === 'photo' ? 'image/jpeg' : 'image/png'
 	});
 	return `${SERVEUR}?${parametres.toString()}`;
