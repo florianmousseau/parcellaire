@@ -37,6 +37,12 @@ const parcelle = (idu: string, contenance: number): Parcelle => ({
 	]
 });
 
+/** La meme parcelle temoin, dans une autre commune. */
+const parcelleDe = (idu: string, contenance: number, commune: string): Parcelle => ({
+	...parcelle(idu, contenance),
+	commune
+});
+
 const AD525 = parcelle('49353000AD0525', 190);
 const AD526 = parcelle('49353000AD0526', 171);
 const AD984 = parcelle('49353000AD0984', 210);
@@ -141,6 +147,83 @@ test('ce qui n est pas un identifiant rend null', () => {
 	assert.equal(decouperIdentifiant('94081000bq0134'), null);
 	assert.equal(decouperIdentifiant(''), null);
 	assert.equal(decouperIdentifiant('../../etc/passwd'), null);
+});
+
+/*
+ * LE VOISIN N EST PAS UNE PARCELLE DE CETTE ADRESSE.
+ *
+ * Cas reel, releve le 2026-09-08 : au 128 rue de Letanduere a Angers, le
+ * referentiel mesure DM 145 a 88,99 % et DM 304 a 10,07 %, et la BAN declare
+ * DM 0304 au 126. Les 10 % sont une bande d un metre le long de la limite -
+ * le referentiel numerise le toit, le cadastre suit le mur.
+ */
+const DM145 = parcelleDe('49007000DM0145', 204, 'Angers');
+const DM304 = parcelleDe('49007000DM0304', 112, 'Angers');
+const LETANDUERE = {
+	lon: -0.554296,
+	lat: 47.458147,
+	parcelles: [
+		{ idu: '49007000DM0145', part: 0.8899 },
+		{ idu: '49007000DM0304', part: 0.1007 }
+	]
+};
+
+test('la parcelle que la BAN declare a un AUTRE numero est retiree', () => {
+	const r = rattacherLaParcelle(
+		null,
+		[DM145, DM304],
+		-0.554296,
+		47.458147,
+		LETANDUERE,
+		['49007000DM0145'],
+		['49007000DM0304']
+	);
+	assert.equal(r?.parcelle.idu, '49007000DM0145');
+	assert.deepEqual(r?.autres, []);
+});
+
+test('le cas fondateur survit : la BAN declare AD 526 au 22, elle reste', () => {
+	// Les deux parcelles du 22 rue Emile Chaillou. AD 526 est declaree a CE
+	// numero : la coupe l epargne, meme si un voisin la declare aussi.
+	const r = rattacherLaParcelle(
+		null,
+		AUTOUR,
+		-0.5049,
+		47.4524,
+		BATIMENT,
+		['49353000AD0526'],
+		['49353000AD0526', '49353000AD0984']
+	);
+	assert.equal(r?.parcelle.idu, '49353000AD0525');
+	assert.deepEqual(
+		r?.autres.map((a) => a.parcelle.idu),
+		['49353000AD0526']
+	);
+});
+
+test('la principale n est jamais coupee, meme declaree ailleurs', () => {
+	// Au 30 rue de Letanduere, la BAN nomme DK 127 quand le batiment est
+	// entier sur DK 128 : une adresse qui perdrait sa principale ne rendrait
+	// plus rien. La regle ne touche que les secondaires.
+	const r = rattacherLaParcelle(
+		null,
+		[DM145, DM304],
+		-0.554296,
+		47.458147,
+		LETANDUERE,
+		[],
+		['49007000DM0145', '49007000DM0304']
+	);
+	assert.equal(r?.parcelle.idu, '49007000DM0145');
+	assert.deepEqual(r?.autres, []);
+});
+
+test('sans liste de voisines, rien ne change', () => {
+	const r = rattacherLaParcelle(null, [DM145, DM304], -0.554296, 47.458147, LETANDUERE, []);
+	assert.deepEqual(
+		r?.autres.map((a) => a.parcelle.idu),
+		['49007000DM0304']
+	);
 });
 
 test('une section a une lettre perd son zero de comblement', () => {

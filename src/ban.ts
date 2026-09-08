@@ -126,6 +126,37 @@ interface NumeroBrut {
  * section et le numero, et l'INSEE est celui de la commune de la page. Un
  * prefixe en blanc vaut `000`, hors commune fusionnee.
  */
+/**
+ * LES PARCELLES QUE LA BAN DECLARE AUX AUTRES NUMEROS DE LA VOIE.
+ *
+ * Sert a retirer le voisin des parcelles d'une adresse : le referentiel des
+ * batiments numerise le TOIT et le cadastre suit le MUR, donc toute maison de
+ * rue mord d'environ un metre chez son voisin et le recouvrement la designe.
+ * La declaration, elle, nomme un numero. Voir `cadastre.rattacherLaParcelle`,
+ * qui porte la mesure du 2026-09-08 et le cas du 128 rue de Letanduere.
+ *
+ * LA DERIVATION VIT ICI, PAS DANS LES TROIS SURFACES QUI L'APPELLENT. La page
+ * de voie, `lib/dossiers.ts` et le plan agrandi rattachent tous les trois ; une
+ * regle recopiee trois fois se corrige une fois, et c'est la lecon que
+ * `rattacherLaParcelle` a deja payee le 2026-09-06.
+ *
+ * UN NUMERO ABSENT DE LA LISTE NE COUPE RIEN. Sans ce garde, une adresse que
+ * la BAN ne connait pas verrait TOUTES les parcelles de la voie declarees
+ * ailleurs, et perdrait ses secondaires sans que personne ait rien declare.
+ */
+export function parcellesDesAutresNumeros(
+	numeros: readonly Numero[],
+	id: string
+): readonly string[] {
+	if (!numeros.some((n) => n.id === id)) return [];
+	const voisines = new Set<string>();
+	for (const n of numeros) {
+		if (n.id === id) continue;
+		for (const p of n.parcelles) voisines.add(p);
+	}
+	return [...voisines];
+}
+
 export function parcelleDeclaree(brut: unknown, insee: string): string | null {
 	if (typeof brut !== 'string' || brut.length < 9 || insee.length !== 5) return null;
 	const queue = brut.slice(-9);

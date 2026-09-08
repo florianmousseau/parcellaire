@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parcelleDeclaree } from './ban.ts';
+import { parcelleDeclaree, parcellesDesAutresNumeros, type Numero } from './ban.ts';
 
 /*
  * LA BAN ECRIT SES PARCELLES DANS LA FORME DES FICHIERS FONCIERS -
@@ -29,4 +29,35 @@ test('une forme qui n est pas une reference ne rend rien', () => {
 	assert.equal(parcelleDeclaree('490353   AD05', '49353'), null);
 	// Sans commune, on ne fabrique pas d'identifiant.
 	assert.equal(parcelleDeclaree('490353   AD0526', ''), null);
+});
+
+/*
+ * CE QUE LES VOISINS DECLARENT. Rue de Letanduere a Angers, les 199 numeros
+ * portent chacun UNE parcelle declaree : DM 0304 au 126, DM 0145 au 128.
+ */
+const numeroDe = (id: string, numero: number, parcelles: string[]): Numero => ({
+	id,
+	numero,
+	suffixe: '',
+	codePostal: '49000',
+	point: { lon: -0.554296, lat: 47.458147 },
+	parcelles
+});
+const VOIE = [
+	numeroDe('49007_4790_00126', 126, ['49007000DM0304']),
+	numeroDe('49007_4790_00128', 128, ['49007000DM0145']),
+	numeroDe('49007_4790_00130', 130, ['49007000DM0147'])
+];
+
+test('les parcelles des autres numeros excluent celles du numero vise', () => {
+	assert.deepEqual(parcellesDesAutresNumeros(VOIE, '49007_4790_00128').toSorted(), [
+		'49007000DM0147',
+		'49007000DM0304'
+	]);
+});
+
+test('un numero absent de la voie ne coupe rien', () => {
+	// Sinon une adresse inconnue de la BAN verrait TOUTE la voie comme voisine
+	// et perdrait ses secondaires sans qu aucune declaration le dise.
+	assert.deepEqual(parcellesDesAutresNumeros(VOIE, '49007_4790_09999'), []);
 });
