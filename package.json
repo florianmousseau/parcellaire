@@ -26,6 +26,7 @@
 		"dist"
 	],
 	"exports": {
+		"./arrondissements": "./dist/arrondissements.js",
 		"./ban": "./dist/ban.js",
 		"./bati": "./dist/bati.js",
 		"./cadastre": "./dist/cadastre.js",
