@@ -170,63 +170,36 @@ export interface Millesime {
 	readonly format: 'png' | 'jpeg';
 }
 
-/* Le type dit que la liste n'est pas vide : sans cela, chaque lecture porterait
-   un `undefined` que le repli devrait traiter comme une erreur possible. */
+/*
+ * LA TABLE SE LIT COMME UNE TABLE : cle, libelle, couche, format. Neuf objets
+ * ecrits en toutes lettres faisaient neuf blocs identiques a un mot pres, que
+ * ni l'oeil ni les outils de duplication ne distinguent.
+ */
+const RANGS = [
+	['1950', '1950-1965', 'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965', 'png'],
+	['1965', '1965-1980', 'ORTHOIMAGERY.ORTHOPHOTOS.1965-1980', 'png'],
+	['1980', '1980-1995', 'ORTHOIMAGERY.ORTHOPHOTOS.1980-1995', 'png'],
+	['2000', '2000-2005', 'ORTHOIMAGERY.ORTHOPHOTOS2000-2005', 'jpeg'],
+	['2006', '2006-2010', 'ORTHOIMAGERY.ORTHOPHOTOS2006-2010', 'jpeg'],
+	['2011', '2011-2015', 'ORTHOIMAGERY.ORTHOPHOTOS2011-2015', 'jpeg'],
+	['2016', '2016-2020', 'ORTHOIMAGERY.ORTHOPHOTOS2016-2020', 'jpeg'],
+	['2021', '2021-2023', 'ORTHOIMAGERY.ORTHOPHOTOS2021-2023', 'jpeg'],
+	['auj', "Aujourd'hui", 'ORTHOIMAGERY.ORTHOPHOTOS', 'jpeg']
+] as const satisfies readonly (readonly [string, string, string, 'png' | 'jpeg'])[];
+
+const rang = ([cle, libelle, couche, format]: (typeof RANGS)[number]): Millesime => ({
+	cle,
+	libelle,
+	couche,
+	format
+});
+
+/* Le premier est nomme a part pour que le type dise que la liste n'est PAS
+   vide : sans cela, chaque lecture porterait un `undefined` que le repli
+   devrait traiter comme une erreur possible. */
 export const MILLESIMES: readonly [Millesime, ...Millesime[]] = [
-	{
-		cle: '1950',
-		libelle: '1950-1965',
-		couche: 'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965',
-		format: 'png'
-	},
-	{
-		cle: '1965',
-		libelle: '1965-1980',
-		couche: 'ORTHOIMAGERY.ORTHOPHOTOS.1965-1980',
-		format: 'png'
-	},
-	{
-		cle: '1980',
-		libelle: '1980-1995',
-		couche: 'ORTHOIMAGERY.ORTHOPHOTOS.1980-1995',
-		format: 'png'
-	},
-	{
-		cle: '2000',
-		libelle: '2000-2005',
-		couche: 'ORTHOIMAGERY.ORTHOPHOTOS2000-2005',
-		format: 'jpeg'
-	},
-	{
-		cle: '2006',
-		libelle: '2006-2010',
-		couche: 'ORTHOIMAGERY.ORTHOPHOTOS2006-2010',
-		format: 'jpeg'
-	},
-	{
-		cle: '2011',
-		libelle: '2011-2015',
-		couche: 'ORTHOIMAGERY.ORTHOPHOTOS2011-2015',
-		format: 'jpeg'
-	},
-	{
-		cle: '2016',
-		libelle: '2016-2020',
-		couche: 'ORTHOIMAGERY.ORTHOPHOTOS2016-2020',
-		format: 'jpeg'
-	},
-	{
-		cle: '2021',
-		libelle: '2021-2023',
-		couche: 'ORTHOIMAGERY.ORTHOPHOTOS2021-2023',
-		format: 'jpeg'
-	},
-	{
-		cle: 'auj',
-		libelle: "Aujourd'hui",
-		couche: 'ORTHOIMAGERY.ORTHOPHOTOS',
-		format: 'jpeg'
-	}
+	rang(RANGS[0]),
+	...RANGS.slice(1).map(rang)
 ];
 
 /** La derniere prise de vue : c'est elle que la photo sert sans qu'on demande. */
