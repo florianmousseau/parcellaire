@@ -12,6 +12,7 @@
  * question posee tous les jours par le public. La page le dit.
  */
 
+import { communeDuCadastre, nomDeLaCommune } from './arrondissements.ts';
 import { anneauxDe, contient, distanceAuBord, type Contour } from './geometrie.ts';
 
 const API = 'https://apicarto.ign.fr/api/cadastre';
@@ -71,62 +72,6 @@ async function traits(couche: string, geom: object, limite?: number): Promise<Tr
 }
 
 const point = (lon: number, lat: number) => ({ type: 'Point', coordinates: [lon, lat] });
-
-/*
- * PARIS, LYON ET MARSEILLE : LA PARCELLE EST DANS L'ARRONDISSEMENT, LA REQUETE
- * SE POSE SOUS LA VILLE.
- *
- * Mesure le 2026-09-08 sur `75102000AI0057`, la parcelle du 15 rue du Croissant
- * a Paris 2e : `?code_insee=75102` rend ZERO parcelle, la meme requete sous
- * `75056` en rend douze, dont celle-la. Le plan cadastral ne connait que les
- * trois COMMUNES ; l'arrondissement vit dans le champ `code_arr` et dans les
- * cinq premiers signes de l'identifiant. Sans cette bascule, les parcelles des
- * 45 arrondissements repondaient toutes 404, et avec elles le lien du plan
- * servi sur chaque page de voie de Paris, Lyon et Marseille.
- *
- * Ce n'est pas une liste de communes - le paquet n'en embarque aucune - mais
- * trois plages fermees du code officiel geographique.
- */
-const VILLES_A_ARRONDISSEMENTS: readonly {
-	readonly ville: string;
-	readonly nom: string;
-	readonly premier: number;
-	readonly dernier: number;
-}[] = [
-	{ ville: '75056', nom: 'Paris', premier: 75101, dernier: 75120 },
-	{ ville: '69123', nom: 'Lyon', premier: 69381, dernier: 69389 },
-	{ ville: '13055', nom: 'Marseille', premier: 13201, dernier: 13216 }
-];
-
-/* La Corse rend `NaN` et ne tombe dans aucune plage, ce qui est la reponse. */
-const arrondissementDe = (insee: string) => {
-	const code = Number(insee);
-	return Number.isInteger(code)
-		? (VILLES_A_ARRONDISSEMENTS.find((v) => code >= v.premier && code <= v.dernier) ?? null)
-		: null;
-};
-
-/**
- * Le code commune sous lequel le cadastre range une parcelle.
- *
- * Le code lu dans l'identifiant partout, SAUF dans les 45 arrondissements de
- * Paris, Lyon et Marseille, qui n'existent pas au plan cadastral.
- */
-export const communeDuCadastre = (insee: string): string => arrondissementDe(insee)?.ville ?? insee;
-
-/**
- * Le nom de la commune d'une parcelle, arrondissement compris.
- *
- * L'API rend « Paris » pour les vingt arrondissements. Le nom du code officiel
- * geographique se CALCULE a partir du code, et c'est lui qui nomme la page :
- * « Paris 2e Arrondissement », pas « Paris ».
- */
-export function nomDeLaCommune(insee: string, nomRendu: string): string {
-	const trouve = arrondissementDe(insee);
-	if (trouve === null) return nomRendu;
-	const rang = Number(insee) - trouve.premier + 1;
-	return `${trouve.nom} ${rang}${rang === 1 ? 'er' : 'e'} Arrondissement`;
-}
 
 const parcelleDe = (t: Trait): Parcelle | null => {
 	const p = t.properties;

@@ -12,6 +12,8 @@
  * qui autorise a les mettre dans une URL.
  */
 
+import { nomDeLaCommune } from './arrondissements.ts';
+
 const LOOKUP = 'https://plateforme.adresse.data.gouv.fr/lookup';
 const GEOCODE = 'https://api-adresse.data.gouv.fr/search';
 const INVERSE = 'https://api-adresse.data.gouv.fr/reverse';
@@ -303,7 +305,19 @@ export async function chercherVoieAuPoint(lon: number, lat: number): Promise<Voi
 	const nom = texte(p.street, texte(p.name));
 	return id === '' || nom === ''
 		? null
-		: { id, nom, insee: texte(p.citycode), commune: texte(p.city) };
+		: {
+				id,
+				nom,
+				insee: texte(p.citycode),
+				/*
+				 * LE COUPLE RENDU EST FAUX DANS LES TROIS VILLES : le geocodeur
+				 * rend `citycode` 75102 avec `city` « Paris ». Le nom sert a
+				 * fabriquer l'adresse d'une page ; garder celui de la ville
+				 * envoyait la porte d'une parcelle du 2e vers `/paris-75102`,
+				 * une redirection de plus avant la bonne page.
+				 */
+				commune: nomDeLaCommune(texte(p.citycode), texte(p.city))
+			};
 }
 
 export interface Voisine {
