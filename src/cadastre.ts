@@ -335,6 +335,42 @@ const parIdentifiant = (parcelles: readonly Parcelle[], idu: string): Parcelle |
  *    connait, mais aucun batiment ne repond : un terrain nu, une adresse neuve.
  * 4. `bord` - la plus proche, mesuree a son BORD, avec sa distance.
  *
+ * ET LA PARCELLE DU VOISIN N'EST PAS LA SIENNE (2026-09-08).
+ *
+ * Florian, sur `aucadastre.fr/angers-49007/rue-de-letanduere-4790?n=128` :
+ * *« 128 rue de letandure c dm 145 et dm 304 ? verifie ? »*. Non. Le
+ * referentiel mesure DM 145 a 88,99 % et DM 304 a 10,07 %, et le second
+ * chiffre est vrai sans etre un fait de propriete : le chevauchement est une
+ * BANDE de 10,9 m de long sur 0,99 m de large le long de la limite mitoyenne.
+ * Le referentiel numerise le TOIT, le cadastre suit le MUR ; un metre de debord
+ * plus le calage des deux plans, et toute maison de rue mord chez son voisin.
+ * Le 128ter deborde en retour sur DM 145, 9,1 m2, bande de 1,00 m.
+ *
+ * La BAN tranche, parce qu'elle DECLARE un proprietaire par numero : DM 0304
+ * est declaree au 126, DM 0145 au 128. Une parcelle que la BAN nomme pour un
+ * AUTRE numero de la voie ne peut pas etre une parcelle de ce numero-ci.
+ *
+ * Ce n'est pas un seuil de part qui repare ca. Mesure du 2026-09-08 sur neuf
+ * voies de neuf communes - Angers, Trelaze, Vitry, Renaze, Muret, Morlaix,
+ * Bordeaux, Lyon 1er, Lille - 970 numeros, 913 avec un batiment, 250 parcelles
+ * secondaires :
+ *
+ *     part de la secondaire | min   | mediane | max
+ *     celles a couper       | 5,0 % | 12,5 %  | 33,4 %
+ *     celles a garder       | 5,1 % | 10,1 %  | 43,6 %
+ *
+ * Les deux populations se RECOUVRENT sur toute leur etendue : aucun seuil ne
+ * les separe, seule la declaration le fait. 162 des 250 sont declarees a un
+ * autre numero, 16 a ce numero-ci, 72 a personne. Sur la seule rue de
+ * Letanduere, 48 des 54.
+ *
+ * LA REGLE NE TOUCHE JAMAIS LA PRINCIPALE, et elle exempte ce que la BAN
+ * declare AUSSI pour ce numero. C'est ce qui garde le cas fondateur : au 22 rue
+ * Emile Chaillou, AD 526 est declaree au 22, elle reste. Au 12 de la meme rue,
+ * AD 0516 a 11 % est declaree au 14 : elle part. A Renaze, le 3 perd AD 146,
+ * qui est la parcelle du 1b - celle-la meme que ce depot avait deja nommee de
+ * travers le 2026-09-06.
+ *
  * Mesure du 2026-09-06 sur quatorze numeros de la rue Pasteur a Vitry : neuf
  * repondent par le batiment, quatre par le point, un seul par le bord. Mesure
  * du 2026-09-07 sur 72 adresses de six communes : 11 en couvrent plusieurs.
@@ -350,7 +386,13 @@ export function rattacherLaParcelle(
 		readonly parcelles: readonly { readonly idu: string; readonly part: number }[];
 	} | null,
 	/** Ce que la BAN declare pour ce numero, en identifiants cadastraux. */
-	declarees: readonly string[] = []
+	declarees: readonly string[] = [],
+	/**
+	 * Ce que la BAN declare pour les AUTRES numeros de la voie. Une parcelle
+	 * qui y figure appartient au voisin : le batiment ne la couvre que par son
+	 * debord de toit. Voir `ban.parcellesDesAutresNumeros`.
+	 */
+	declareesAilleurs: readonly string[] = []
 ): Rattachement | null {
 	/*
 	 * TOUT CE QUI PORTE L'ADRESSE, dans l'ordre de la part couverte. La
@@ -374,9 +416,18 @@ export function rattacherLaParcelle(
 	}
 	portees.sort((a, b) => (b.part ?? 0) - (a.part ?? 0));
 
-	/** Ce qui reste une fois la principale nommee, dans le meme ordre. */
+	/*
+	 * Ce qui reste une fois la principale nommee, dans le meme ordre, LE VOISIN
+	 * RETIRE. La coupe ne porte que sur les secondaires - la principale sort
+	 * des quatre etages ci-dessous et n'est jamais remise en cause ici - et
+	 * elle epargne ce que la BAN declare AUSSI pour ce numero, une parcelle
+	 * pouvant porter deux numeros a la fois.
+	 */
+	const duVoisin = new Set(declareesAilleurs);
 	const autres = (principale: Parcelle): ParcelleDeLAdresse[] =>
-		portees.filter((p) => p.parcelle.idu !== principale.idu);
+		portees.filter(
+			(p) => p.parcelle.idu !== principale.idu && !(duVoisin.has(p.parcelle.idu) && !p.declaree)
+		);
 	const partDe = (p: Parcelle): number | null => parts.get(p.idu) ?? null;
 
 	if (auPoint !== null) {
