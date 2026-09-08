@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { communeDuCadastre, estUnArrondissement, nomDeLaCommune } from './arrondissements.ts';
+import {
+	communeDuCadastre,
+	communeMere,
+	estUnArrondissement,
+	nomDeLaCommune
+} from './arrondissements.ts';
 /*
  * LES 45 ARRONDISSEMENTS, ET LE 404 QU'ILS RENDAIENT TOUS.
  *
@@ -52,4 +57,19 @@ test('la question se pose aussi toute seule', () => {
 	assert.equal(estUnArrondissement('75056'), false);
 	assert.equal(estUnArrondissement('94081'), false);
 	assert.equal(estUnArrondissement('2A004'), false);
+});
+
+test('la commune mere se lit pour toute source qui ignore les arrondissements', () => {
+	/*
+	 * Mesure du 2026-09-08 sur Georisques : `gaspar/catnat?code_insee=75102`
+	 * rend ZERO arrete, `75056` en rend vingt - et la meme API repond a `75102`
+	 * pour la sismicite et le radon, ou `75056` rend zero. Le code se choisit
+	 * donc source par source, ce qui est exactement pourquoi cette fonction
+	 * existe a cote de `communeDuCadastre` plutot que de s'appeler comme elle.
+	 */
+	assert.equal(communeMere('75102'), '75056');
+	assert.equal(communeMere('69383'), '69123');
+	assert.equal(communeMere('13208'), '13055');
+	assert.equal(communeMere('94081'), '94081');
+	assert.equal(communeMere('2A004'), '2A004');
 });
