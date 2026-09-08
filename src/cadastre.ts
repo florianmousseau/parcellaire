@@ -72,6 +72,62 @@ async function traits(couche: string, geom: object, limite?: number): Promise<Tr
 
 const point = (lon: number, lat: number) => ({ type: 'Point', coordinates: [lon, lat] });
 
+/*
+ * PARIS, LYON ET MARSEILLE : LA PARCELLE EST DANS L'ARRONDISSEMENT, LA REQUETE
+ * SE POSE SOUS LA VILLE.
+ *
+ * Mesure le 2026-09-08 sur `75102000AI0057`, la parcelle du 15 rue du Croissant
+ * a Paris 2e : `?code_insee=75102` rend ZERO parcelle, la meme requete sous
+ * `75056` en rend douze, dont celle-la. Le plan cadastral ne connait que les
+ * trois COMMUNES ; l'arrondissement vit dans le champ `code_arr` et dans les
+ * cinq premiers signes de l'identifiant. Sans cette bascule, les parcelles des
+ * 45 arrondissements repondaient toutes 404, et avec elles le lien du plan
+ * servi sur chaque page de voie de Paris, Lyon et Marseille.
+ *
+ * Ce n'est pas une liste de communes - le paquet n'en embarque aucune - mais
+ * trois plages fermees du code officiel geographique.
+ */
+const VILLES_A_ARRONDISSEMENTS: readonly {
+	readonly ville: string;
+	readonly nom: string;
+	readonly premier: number;
+	readonly dernier: number;
+}[] = [
+	{ ville: '75056', nom: 'Paris', premier: 75101, dernier: 75120 },
+	{ ville: '69123', nom: 'Lyon', premier: 69381, dernier: 69389 },
+	{ ville: '13055', nom: 'Marseille', premier: 13201, dernier: 13216 }
+];
+
+/* La Corse rend `NaN` et ne tombe dans aucune plage, ce qui est la reponse. */
+const arrondissementDe = (insee: string) => {
+	const code = Number(insee);
+	return Number.isInteger(code)
+		? (VILLES_A_ARRONDISSEMENTS.find((v) => code >= v.premier && code <= v.dernier) ?? null)
+		: null;
+};
+
+/**
+ * Le code commune sous lequel le cadastre range une parcelle.
+ *
+ * Le code lu dans l'identifiant partout, SAUF dans les 45 arrondissements de
+ * Paris, Lyon et Marseille, qui n'existent pas au plan cadastral.
+ */
+export const communeDuCadastre = (insee: string): string => arrondissementDe(insee)?.ville ?? insee;
+
+/**
+ * Le nom de la commune d'une parcelle, arrondissement compris.
+ *
+ * L'API rend « Paris » pour les vingt arrondissements. Le nom du code officiel
+ * geographique se CALCULE a partir du code, et c'est lui qui nomme la page :
+ * « Paris 2e Arrondissement », pas « Paris ».
+ */
+export function nomDeLaCommune(insee: string, nomRendu: string): string {
+	const trouve = arrondissementDe(insee);
+	if (trouve === null) return nomRendu;
+	const rang = Number(insee) - trouve.premier + 1;
+	return `${trouve.nom} ${rang}${rang === 1 ? 'er' : 'e'} Arrondissement`;
+}
+
 const parcelleDe = (t: Trait): Parcelle | null => {
 	const p = t.properties;
 	const idu = texte(p?.idu);
@@ -82,8 +138,14 @@ const parcelleDe = (t: Trait): Parcelle | null => {
 		numero: texte(p?.numero),
 		prefixe: texte(p?.com_abs, '000'),
 		contenance: entier(p?.contenance) ?? 0,
-		insee: texte(p?.code_insee),
-		commune: texte(p?.nom_com),
+		/*
+		 * L'INSEE SE LIT DANS L'IDENTIFIANT, PAS DANS `code_insee`. Les deux ne
+		 * different que dans les trois villes a arrondissements, ou `code_insee`
+		 * rend 75056 pour une parcelle du 2e - et c'est le code de
+		 * l'arrondissement qui adresse la page.
+		 */
+		insee: idu.slice(0, 5),
+		commune: nomDeLaCommune(idu.slice(0, 5), texte(p?.nom_com)),
 		contour: anneauxDe(t.geometry)
 	};
 };
@@ -132,7 +194,7 @@ export async function parcelleParIdentifiant(idu: string): Promise<Parcelle | nu
 	const morceaux = decouperIdentifiant(idu);
 	if (morceaux === null) return null;
 	const parametres = new URLSearchParams({
-		code_insee: morceaux.insee,
+		code_insee: communeDuCadastre(morceaux.insee),
 		section: morceaux.section,
 		numero: morceaux.numero
 	});
@@ -141,11 +203,15 @@ export async function parcelleParIdentifiant(idu: string): Promise<Parcelle | nu
 	});
 	if (!reponse.ok) return null;
 	const brut = (await reponse.json()) as { features?: unknown };
-	const premier = Array.isArray(brut.features)
-		? (brut.features[0] as Trait | undefined)
-		: undefined;
-	const parcelle = premier ? parcelleDe(premier) : null;
-	return parcelle?.idu === idu ? parcelle : null;
+	const rendus = Array.isArray(brut.features) ? (brut.features as Trait[]) : [];
+	/*
+	 * LA BONNE SE CHERCHE, elle n'est jamais tenue pour la premiere. Sous une
+	 * ville a arrondissements, une section et un numero designent autant de
+	 * parcelles qu'il y a d'arrondissements - soixante-cinq pour « 0C 59 » a
+	 * Marseille - et `features[0]` ne rendait alors que du null.
+	 */
+	const trouve = rendus.find((t) => texte(t.properties?.idu) === idu);
+	return trouve ? parcelleDe(trouve) : null;
 }
 
 /** La feuille cadastrale du point : son echelle et son edition, comme sur un cartouche. */
