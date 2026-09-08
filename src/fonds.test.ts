@@ -1,6 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { definitionDuFond, fondDemande, FONDS, urlDuFond } from './fonds.ts';
+import {
+	definitionDuFond,
+	definitionDuMillesime,
+	fondDemande,
+	FONDS,
+	MILLESIMES,
+	millesimeDemande,
+	SONDE_PLEINE,
+	urlDeLaSonde,
+	urlDuFond,
+	urlDuMillesime
+} from './fonds.ts';
 
 /*
  * LE RELEVE DES COMMUNES SERVIES vit dans le site, qui le moissonne. Ce qui
@@ -98,26 +109,6 @@ test('la photo part en JPEG, le plan IGN en PNG', () => {
 	assert.equal(parametres(urlDuFond('plan', CADRE, 100, 100) ?? '').get('FORMAT'), 'image/png');
 });
 
-test('la photo de 1950 part en PNG, parce que sa couche refuse le JPEG', () => {
-	/*
-	 * Mesure du 2026-09-08 : `ORTHOIMAGERY.ORTHOPHOTOS.1950-1965` est servie en
-	 * quatre bandes et repond 400 *« Used data format (4 band(s) UINT8) and
-	 * expected output format (image/jpeg) are not consistent »*. Un cadre vide,
-	 * sans message. C'est une photo qui ne se demande pas comme l'autre, et ce
-	 * test est la pour que personne ne l'aligne sur elle.
-	 */
-	const url = urlDuFond('avant', CADRE, 100, 100);
-	assert.ok(url !== null);
-	assert.equal(parametres(url).get('FORMAT'), 'image/png');
-	assert.equal(parametres(url).get('LAYERS'), 'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965');
-});
-
-test('le fond de 1950 se demande par son mot, et l inconnu retombe au cadastre', () => {
-	// `?fond=avant` vient de l'URL et voyage dans les liens du site.
-	assert.equal(fondDemande('avant'), 'avant');
-	assert.equal(fondDemande('1950'), 'cadastre');
-});
-
 test('chaque fond dit ce qu il apporte, et nomme son producteur', () => {
 	// Un onglet qui ne dit pas ce qu'il change ne se clique pas, et une image
 	// publique se cite : les deux sont des regles du site, pas des ornements.
@@ -126,4 +117,67 @@ test('chaque fond dit ce qu il apporte, et nomme son producteur', () => {
 		assert.ok(f.dit.length > 0, f.code);
 		assert.ok(f.source.length > 0, f.code);
 	}
+});
+
+test('la photo porte neuf millesimes, du plus ancien au plus recent', () => {
+	/*
+	 * Neuf mosaiques consolidees, relevees aux capacites du service le
+	 * 2026-09-08. Ce ne sont PAS les couches annee par annee (2001 a 2024) :
+	 * celles-la sont les campagnes brutes, et l'IGN couvre la France par
+	 * rotation d'environ trois ans, donc chacune ne porte qu'un tiers du pays.
+	 */
+	assert.equal(MILLESIMES.length, 9);
+	assert.equal(MILLESIMES[0]?.libelle, '1950-1965');
+	assert.equal(MILLESIMES.at(-1)?.cle, 'auj');
+	assert.equal(definitionDuMillesime('auj').couche, 'ORTHOIMAGERY.ORTHOPHOTOS');
+	// Une cle se recopie dans une adresse : deux fois la meme casserait un lien.
+	assert.equal(new Set(MILLESIMES.map((m) => m.cle)).size, MILLESIMES.length);
+});
+
+test('les trois campagnes anciennes partent en PNG, les six autres en JPEG', () => {
+	/*
+	 * Mesure du 2026-09-08 : `1950-1965`, `1965-1980` et `1980-1995` sont
+	 * servies en quatre bandes et repondent 400 au JPEG, avec un cadre vide et
+	 * aucun message. Les six suivantes repondent 200. Le format est donc une
+	 * donnee de la table, pas une deduction sur le nom de la couche.
+	 */
+	const png = MILLESIMES.filter((m) => m.format === 'png').map((m) => m.cle);
+	assert.deepEqual(png, ['1950', '1965', '1980']);
+	const url = urlDuMillesime(MILLESIMES[0], CADRE, 100, 100);
+	assert.equal(parametres(url).get('FORMAT'), 'image/png');
+	assert.equal(
+		parametres(urlDuMillesime(definitionDuMillesime('auj'), CADRE, 100, 100)).get('FORMAT'),
+		'image/jpeg'
+	);
+});
+
+test('la sonde fait huit pixels, en PNG quelle que soit la couche', () => {
+	/*
+	 * C'est ce qui rend le seuil comparable d'un millesime a l'autre : un 8 x 8
+	 * JPEG pese 640 octets plein comme vide, quand le meme en PNG separe 71 de
+	 * 242. Et elle ne se DOUBLE pas : on veut les huit pixels demandes.
+	 */
+	for (const m of MILLESIMES) {
+		const p = parametres(urlDeLaSonde(m, CADRE));
+		assert.equal(p.get('FORMAT'), 'image/png', m.cle);
+		assert.equal(p.get('WIDTH'), '8', m.cle);
+		assert.equal(p.get('HEIGHT'), '8', m.cle);
+	}
+	assert.ok(SONDE_PLEINE > 71 && SONDE_PLEINE < 135);
+});
+
+test('la sonde et l image regardent le MEME cadre', () => {
+	// Sonder ailleurs que ce qu'on dessine repondrait pour un autre endroit.
+	const m = MILLESIMES[0];
+	assert.equal(
+		parametres(urlDeLaSonde(m, CADRE)).get('BBOX'),
+		parametres(urlDuMillesime(m, CADRE, 960, 540)).get('BBOX')
+	);
+});
+
+test('un millesime inconnu retombe sur le dernier, pas sur une erreur', () => {
+	// `?millesime=` vient de l'URL : un lien recopie de travers ne rend pas 500.
+	assert.equal(millesimeDemande('1950').libelle, '1950-1965');
+	assert.equal(millesimeDemande(null).cle, 'auj');
+	assert.equal(millesimeDemande('1789').cle, 'auj');
 });

@@ -49,7 +49,7 @@ export type SertLePlanDgfip = (insee: string) => boolean;
 
 const SERVEUR = 'https://data.geopf.fr/wms-r/wms';
 
-export type Fond = 'cadastre' | 'cote' | 'photo' | 'plan' | 'avant';
+export type Fond = 'cadastre' | 'cote' | 'photo' | 'plan';
 
 export const FOND_PAR_DEFAUT: Fond = 'cadastre';
 
@@ -124,31 +124,127 @@ export const FONDS: readonly Definition[] = [
 		dit: 'les rues nommées autour',
 		couche: 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2',
 		source: 'IGN, Plan IGN'
-	},
-	{
-		/*
-		 * LA MEME EMPRISE, SOIXANTE-DIX ANS PLUS TOT.
-		 *
-		 * L'IGN sert ses photographies aeriennes historiques comme une couche de
-		 * plus sur le meme serveur : au cadre exact du dessin, le lecteur voit ce
-		 * qu'il y avait a l'adresse avant l'immeuble, le lotissement ou la
-		 * rocade. C'est la seule question de cette liste a laquelle ni le plan ni
-		 * la photo d'aujourd'hui ne repondent.
-		 *
-		 * Les deux autres millesimes du service ont ete mesures le 2026-09-08 :
-		 * `1965-1980` repond partout comme celle-ci, `1980-1995` rend une image
-		 * VIDE de 760 octets sur les points sondes - une couche qui existe aux
-		 * capacites et ne couvre pas. On n'en sert donc qu'une, et c'est la plus
-		 * ancienne, celle qui montre autre chose.
-		 */
-		code: 'avant',
-		intitule: 'Photo aérienne de 1950-1965',
-		nom: '1950',
-		dit: "ce qu'il y avait avant",
-		couche: 'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965',
-		source: 'IGN, photographies aériennes historiques 1950-1965'
 	}
 ];
+
+/* -------------------------------------------------------------------------- */
+/* LES MILLESIMES DE LA PHOTO                                                  */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * LA MEME EMPRISE, NEUF FOIS, DEPUIS 1950.
+ *
+ * L'IGN sert ses campagnes aeriennes comme autant de couches du meme serveur.
+ * La photo n'est donc pas UN fond de plus, c'est un fond qui porte une DATE, et
+ * la date se change sans quitter la photo - le geste de Google Maps, ni un
+ * onglet par annee ni un choix a faire avant d'avoir vu l'image.
+ *
+ * CE SONT LES MOSAIQUES CONSOLIDEES, PAS LES COUCHES ANNEE PAR ANNEE. Le
+ * service publie aussi `ORTHOPHOTOS2001` a `ORTHOPHOTOS2024` : ce sont les
+ * campagnes brutes, et l'IGN couvre la France par rotation d'environ trois
+ * ans, donc chacune ne porte qu'un tiers du pays. Les mosaïques par periode,
+ * elles, sont faites pour etre completes.
+ *
+ * ET ELLES NE LE SONT PAS TOUJOURS. Mesure du 2026-09-08 : `1980-1995` rend
+ * une image VIDE a Paris 2e et a Vitry-sur-Seine, et une image PLEINE a
+ * Renaze. Une couche presente aux capacites ne prouve donc rien sur un point
+ * donne : c'est a l'appelant de sonder (`urlDeLaSonde`) avant de proposer un
+ * cran, et de dire celui qui ne repond pas plutot que de le cacher.
+ */
+export interface Millesime {
+	/** Ce qui voyage dans l'adresse : `?millesime=1950`. */
+	readonly cle: string;
+	/** Ce que le lecteur lit sur le cran : « 1950-1965 ». */
+	readonly libelle: string;
+	readonly couche: string;
+	/**
+	 * LE FORMAT EST UNE DONNEE, PAS UNE DEDUCTION.
+	 *
+	 * Les trois campagnes anciennes sont servies en QUATRE bandes et repondent
+	 * 400 au JPEG - *« Used data format (4 band(s) UINT8) and expected output
+	 * format (image/jpeg) are not consistent »*, un cadre vide sans message.
+	 * Mesure du 2026-09-08, les trois, contre les six autres en 200. Le champ
+	 * est ici plutot que devine sur le nom de la couche pour qu'un millesime
+	 * ajoute demain oblige a le mesurer.
+	 */
+	readonly format: 'png' | 'jpeg';
+}
+
+/*
+ * LA TABLE SE LIT COMME UNE TABLE : cle, libelle, couche, format. Neuf objets
+ * ecrits en toutes lettres faisaient neuf blocs identiques a un mot pres, que
+ * ni l'oeil ni les outils de duplication ne distinguent.
+ */
+const RANGS = [
+	['1950', '1950-1965', 'ORTHOIMAGERY.ORTHOPHOTOS.1950-1965', 'png'],
+	['1965', '1965-1980', 'ORTHOIMAGERY.ORTHOPHOTOS.1965-1980', 'png'],
+	['1980', '1980-1995', 'ORTHOIMAGERY.ORTHOPHOTOS.1980-1995', 'png'],
+	['2000', '2000-2005', 'ORTHOIMAGERY.ORTHOPHOTOS2000-2005', 'jpeg'],
+	['2006', '2006-2010', 'ORTHOIMAGERY.ORTHOPHOTOS2006-2010', 'jpeg'],
+	['2011', '2011-2015', 'ORTHOIMAGERY.ORTHOPHOTOS2011-2015', 'jpeg'],
+	['2016', '2016-2020', 'ORTHOIMAGERY.ORTHOPHOTOS2016-2020', 'jpeg'],
+	['2021', '2021-2023', 'ORTHOIMAGERY.ORTHOPHOTOS2021-2023', 'jpeg'],
+	['auj', "Aujourd'hui", 'ORTHOIMAGERY.ORTHOPHOTOS', 'jpeg']
+] as const satisfies readonly (readonly [string, string, string, 'png' | 'jpeg'])[];
+
+const rang = ([cle, libelle, couche, format]: (typeof RANGS)[number]): Millesime => ({
+	cle,
+	libelle,
+	couche,
+	format
+});
+
+/* Le premier est nomme a part pour que le type dise que la liste n'est PAS
+   vide : sans cela, chaque lecture porterait un `undefined` que le repli
+   devrait traiter comme une erreur possible. */
+export const MILLESIMES: readonly [Millesime, ...Millesime[]] = [
+	rang(RANGS[0]),
+	...RANGS.slice(1).map(rang)
+];
+
+/** La derniere prise de vue : c'est elle que la photo sert sans qu'on demande. */
+export const MILLESIME_PAR_DEFAUT = 'auj';
+
+/** Le millesime demande, ou le dernier : un mot inconnu ne fait pas une erreur. */
+export function millesimeDemande(valeur: string | null): Millesime {
+	const trouve = MILLESIMES.find((m) => m.cle === valeur);
+	return trouve ?? definitionDuMillesime(MILLESIME_PAR_DEFAUT);
+}
+
+export function definitionDuMillesime(cle: string): Millesime {
+	// La liste est close et `millesimeDemande` la garde : le repli sert au type.
+	return MILLESIMES.find((m) => m.cle === cle) ?? MILLESIMES[0];
+}
+
+/** L'image d'un millesime, au cadre exact du dessin. */
+export const urlDuMillesime = (
+	millesime: Millesime,
+	cadre: Cadre,
+	largeur: number,
+	hauteur: number
+): string => imageWms(millesime.couche, cadre, largeur, hauteur, millesime.format, true);
+
+/**
+ * L'adresse qui dit si ce millesime couvre ce cadre : la MEME image, en 8 x 8.
+ *
+ * Une couche presente aux capacites du service ne prouve rien sur un point
+ * donne, et une image vide n'est pas une erreur : elle sort en 200 et se
+ * dessine en blanc. Le seul signal est le POIDS. Mesure du 2026-09-08 en
+ * 8 x 8 PNG : 71 octets la ou la campagne ne couvre pas, 135 a 242 la ou elle
+ * couvre - un ecart de deux a trois fois, sur tous les points sondes.
+ *
+ * En PNG QUELLE QUE SOIT la couche, et c'est ce qui rend le seuil comparable :
+ * les six couches recentes acceptent le JPEG, dont un 8 x 8 pese 640 octets
+ * pleins comme vides. Un seuil pose sur deux formats ne mesurerait rien.
+ */
+export const urlDeLaSonde = (millesime: Millesime, cadre: Cadre): string =>
+	imageWms(millesime.couche, cadre, SONDE, SONDE, 'png', false);
+
+/** Le cote de la sonde, en pixels. */
+const SONDE = 8;
+
+/** Au-dela de ce poids, la campagne a couvert ce cadre. */
+export const SONDE_PLEINE = 100;
 
 /** Le fond demande, ou celui par defaut : un mot inconnu ne fait pas une erreur. */
 export function fondDemande(valeur: string | null): Fond {
@@ -197,8 +293,6 @@ export function urlDuFond(
 ): string | null {
 	const { couche } = definitionDuFond(fond);
 	if (couche === null) return null;
-	const facteur = Math.min(DENSITE, COTE_MAX_DEMANDE / Math.max(largeur, hauteur, 1));
-	const enPixels = (v: number) => Math.max(1, Math.round(v * facteur));
 	if (couche === DGFIP) {
 		/*
 		 * Sans commune, ou sur une commune que leur WMS refuse, on ne demande RIEN
@@ -206,8 +300,36 @@ export function urlDuFond(
 		 * un cadre vide a la place du plan par defaut - dix-neuf communes.
 		 */
 		if (insee === null || !sertLePlanDgfip(insee)) return null;
+		const facteur = Math.min(DENSITE, COTE_MAX_DEMANDE / Math.max(largeur, hauteur, 1));
+		const enPixels = (v: number) => Math.max(1, Math.round(v * facteur));
 		return planDgfip(insee, cadre, enPixels(largeur), enPixels(hauteur));
 	}
+	// Le trait du plan IGN se hache en JPEG ; la photo, elle, y gagne en poids.
+	return imageWms(couche, cadre, largeur, hauteur, fond === 'photo' ? 'jpeg' : 'png', true);
+}
+
+/**
+ * Une image du WMS de la Geoplateforme, au cadre exact demande.
+ *
+ * `CRS:84` plutot que `EPSG:4326` : en WMS 1.3.0 le second impose l'ordre
+ * latitude-longitude, que la moitie des exemples du web ecrit a l'envers.
+ *
+ * `plusFine` porte le doublement de l'echantillonnage : vrai pour ce qui
+ * s'affiche, faux pour une sonde, dont on veut les huit pixels demandes et pas
+ * seize.
+ */
+function imageWms(
+	couche: string,
+	cadre: Cadre,
+	largeur: number,
+	hauteur: number,
+	format: 'png' | 'jpeg',
+	plusFine: boolean
+): string {
+	const facteur = plusFine
+		? Math.min(DENSITE, COTE_MAX_DEMANDE / Math.max(largeur, hauteur, 1))
+		: 1;
+	const enPixels = (v: number) => Math.max(1, Math.round(v * facteur));
 	const bbox = [cadre.ouest, cadre.sud, cadre.est, cadre.nord].map((v) => v.toFixed(6)).join(',');
 	const parametres = new URLSearchParams({
 		SERVICE: 'WMS',
@@ -219,18 +341,7 @@ export function urlDuFond(
 		BBOX: bbox,
 		WIDTH: String(enPixels(largeur)),
 		HEIGHT: String(enPixels(hauteur)),
-		/*
-		 * Le trait du plan IGN se lit mal en JPEG ; la photo d'aujourd'hui, elle,
-		 * y gagne.
-		 *
-		 * ET LA PHOTO DE 1950 LE REFUSE, ce qui ne se devine pas : sa couche est
-		 * servie en QUATRE bandes, et le service repond alors 400 *« Used data
-		 * format (4 band(s) UINT8) and expected output format (image/jpeg) are
-		 * not consistent »*. Un cadre vide, pas un message. Elle est donc la
-		 * seule photo de cette liste a partir en PNG, et ce n'est pas un oubli
-		 * a corriger.
-		 */
-		FORMAT: fond === 'photo' ? 'image/jpeg' : 'image/png'
+		FORMAT: `image/${format}`
 	});
 	return `${SERVEUR}?${parametres.toString()}`;
 }
