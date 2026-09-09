@@ -58,11 +58,10 @@ jobs:
       # format check, lint, typecheck, tests.
       - run: npm run gate
 
-      # Only what a consumer would actually install. The package ships no
-      # runtime dependency, so this passes on an empty set today - which is the
-      # point: the day one is added, this is already watching it. `--omit=dev`
-      # because an advisory on a linter cannot reach anybody who installs this
-      # package, and a gate that goes red for something nobody can be hurt by
-      # gets ignored, then removed.
-      - name: audit what a consumer installs
-        run: npm audit --omit=dev --audit-level=high
+      # Durci le 2026-09-09 (direction D-009) : plus de `--omit=dev`. Un avis
+      # high/critical sur un outil de build (eslint, typescript...) atteint qui
+      # developpe et publie ce depot, meme si aucun consommateur ne l'installe
+      # jamais - la meme raison qui a fait tomber l'exception ailleurs sur le
+      # parc.
+      - name: audit dependencies
+        run: npm audit --audit-level=high
