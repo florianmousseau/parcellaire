@@ -14,9 +14,9 @@
 
 import { communeDuCadastre, nomDeLaCommune } from './arrondissements.ts';
 import { anneauxDe, contient, distanceAuBord, type Contour } from './geometrie.ts';
-import { lire, SEMAINE } from './reseau.ts';
 
 const API = 'https://apicarto.ign.fr/api/cadastre';
+const UA = 'aucadastre/1.0 (+https://aucadastre.fr)';
 
 export interface Parcelle {
 	readonly idu: string;
@@ -60,10 +60,36 @@ const texte = (valeur: unknown, repli = ''): string =>
 const entier = (valeur: unknown): number | null =>
 	typeof valeur === 'number' && Number.isFinite(valeur) ? valeur : null;
 
+/*
+ * POURQUOI CES APPELS NE PASSENT PAS PAR `reseau.lire` (2026-09-10).
+ *
+ * Ils ont ete branches dessus le matin meme, pour gagner le cache d'arete
+ * qu'edifiable perdait en quittant son propre `amont()`. Rendu le soir : sur
+ * `edifiable.fr/plu/trelaze-49353/voie/rue-emile-chaillou?n=22`, la page ne
+ * servait plus qu'AD 525 - la deuxieme parcelle du numero avait disparu, alors
+ * que la meme fonction, appelee depuis node, rendait bien AD 525 et AD 526.
+ *
+ * Le seul ecart etait `cf: { cacheEverything: true, cacheTtl }` sur ce `fetch`.
+ * Retire, la page reserre les deux ; remis, elle en perd une. Mesure faite deux
+ * fois, sur un etat local neuf, avec deux adresses (le 12 et le 22 de la meme
+ * rue) : les deux perdaient leur seconde parcelle.
+ *
+ * CE QUI N'EST PAS EXPLIQUE : par quel mecanisme. L'URL fait 276 signes, loin
+ * de toute borne de cle de cache, et la reponse revient - la parcelle
+ * principale se trouve encore. Ce qui change est le CONTENU rendu, pas sa
+ * presence, et c'est exactement le genre de panne qui ne se voit pas dans un
+ * type ni dans un test unitaire.
+ *
+ * Donc on ne remet pas ce cache tant que le mecanisme n'est pas mesure, et pas
+ * seulement sur `wrangler dev` : la page servie est le seul juge. Un correctif
+ * qui rend la page plus rapide et fausse n'est pas un correctif.
+ */
 async function traits(couche: string, geom: object, limite?: number): Promise<Trait[]> {
 	const parametres = new URLSearchParams({ geom: JSON.stringify(geom) });
 	if (limite !== undefined) parametres.set('_limit', String(limite));
-	const reponse = await lire(`${API}/${couche}?${parametres.toString()}`, SEMAINE);
+	const reponse = await fetch(`${API}/${couche}?${parametres.toString()}`, {
+		headers: { 'User-Agent': UA }
+	});
 	if (!reponse.ok) throw new Error(`API Carto cadastre : HTTP ${reponse.status}`);
 	const brut = (await reponse.json()) as { features?: unknown };
 	return Array.isArray(brut.features) ? (brut.features as Trait[]) : [];
@@ -141,7 +167,9 @@ export async function parcelleParIdentifiant(idu: string): Promise<Parcelle | nu
 		section: morceaux.section,
 		numero: morceaux.numero
 	});
-	const reponse = await lire(`${API}/parcelle?${parametres.toString()}`, SEMAINE);
+	const reponse = await fetch(`${API}/parcelle?${parametres.toString()}`, {
+		headers: { 'User-Agent': UA }
+	});
 	if (!reponse.ok) return null;
 	const brut = (await reponse.json()) as { features?: unknown };
 	const rendus = Array.isArray(brut.features) ? (brut.features as Trait[]) : [];
