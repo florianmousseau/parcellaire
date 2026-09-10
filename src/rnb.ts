@@ -55,6 +55,27 @@ const RNB = 'https://rnb-api.beta.gouv.fr/api/alpha/buildings/';
 const CONSTRUIT = 'constructed';
 
 /**
+ * LA FORME D'UNE CLE D'INTEROPERABILITE : INSEE, code de voie, numero.
+ *
+ * LA CORSE A DES LETTRES DANS SON CODE INSEE, et un motif en cinq chiffres
+ * l'ecarte en silence. Mesure du 2026-09-10 : le 1 cours Napoleon a Ajaccio
+ * porte la cle `2a004_0970_00001`, que le motif precedent refusait. Le refus
+ * n'est pas une erreur, c'est un `null` - donc pas de batiment, donc pas de
+ * parts, donc TOUTE la Corse retombait sur « la parcelle la plus proche », le
+ * repli que la mesure du 2026-09-06 existe justement pour eviter.
+ *
+ * EXPORTEE POUR ETRE MESUREE : une expression reguliere qui perd un antislash
+ * reste valide, passe le lint et le typage, et rend simplement `null` sur tout.
+ * C'est deja arrive dans ce paquet, et seule une porte en 404 permanente l'a
+ * fait voir.
+ *
+ * Le motif est celui de `cadastre.decouperIdentifiant`, qui lit deja un code
+ * INSEE ainsi : un chiffre, puis un chiffre ou A ou B, puis trois chiffres.
+ * Les departements d'outre-mer, eux, sont en chiffres et passaient deja.
+ */
+export const CLE_BAN = /^\d[\dAB]\d{3}_[0-9a-z]+_\d+/i;
+
+/**
  * LA PART DU BATIMENT SOUS LAQUELLE UNE PARCELLE N'EST PLUS LA SIENNE.
  *
  * Releve du 2026-09-07 sur 72 adresses de six communes - Trelaze, Vitry,
@@ -136,7 +157,7 @@ export function parcellesRetenues(plots: unknown): ParcelleDuBatiment[] {
  * referentiel n'a pas encore couverte.
  */
 export async function batimentDeLAdresse(cleBan: string): Promise<BatimentDeLAdresse | null> {
-	if (!/^\d{5}_[0-9a-z]+_\d+/i.test(cleBan)) return null;
+	if (!CLE_BAN.test(cleBan)) return null;
 	const brut = (await json(
 		`${RNB}?cle_interop_ban=${encodeURIComponent(cleBan)}&withPlots=1`,
 		JOUR
