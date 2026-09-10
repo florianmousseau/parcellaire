@@ -14,9 +14,9 @@
 
 import { communeDuCadastre, nomDeLaCommune } from './arrondissements.ts';
 import { anneauxDe, contient, distanceAuBord, type Contour } from './geometrie.ts';
+import { lire, SEMAINE } from './reseau.ts';
 
 const API = 'https://apicarto.ign.fr/api/cadastre';
-const UA = 'aucadastre/1.0 (+https://aucadastre.fr)';
 
 export interface Parcelle {
 	readonly idu: string;
@@ -63,9 +63,7 @@ const entier = (valeur: unknown): number | null =>
 async function traits(couche: string, geom: object, limite?: number): Promise<Trait[]> {
 	const parametres = new URLSearchParams({ geom: JSON.stringify(geom) });
 	if (limite !== undefined) parametres.set('_limit', String(limite));
-	const reponse = await fetch(`${API}/${couche}?${parametres.toString()}`, {
-		headers: { 'User-Agent': UA }
-	});
+	const reponse = await lire(`${API}/${couche}?${parametres.toString()}`, SEMAINE);
 	if (!reponse.ok) throw new Error(`API Carto cadastre : HTTP ${reponse.status}`);
 	const brut = (await reponse.json()) as { features?: unknown };
 	return Array.isArray(brut.features) ? (brut.features as Trait[]) : [];
@@ -143,9 +141,7 @@ export async function parcelleParIdentifiant(idu: string): Promise<Parcelle | nu
 		section: morceaux.section,
 		numero: morceaux.numero
 	});
-	const reponse = await fetch(`${API}/parcelle?${parametres.toString()}`, {
-		headers: { 'User-Agent': UA }
-	});
+	const reponse = await lire(`${API}/parcelle?${parametres.toString()}`, SEMAINE);
 	if (!reponse.ok) return null;
 	const brut = (await reponse.json()) as { features?: unknown };
 	const rendus = Array.isArray(brut.features) ? (brut.features as Trait[]) : [];
