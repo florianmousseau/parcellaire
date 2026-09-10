@@ -61,3 +61,17 @@ test('un numero absent de la voie ne coupe rien', () => {
 	// et perdrait ses secondaires sans qu aucune declaration le dise.
 	assert.deepEqual(parcellesDesAutresNumeros(VOIE, '49007_4790_09999'), []);
 });
+
+test('une liste de numeros qui n est pas celle de ce paquet passe quand meme', () => {
+	/*
+	 * edifiable ecrit son point `[lon, lat]` et son code postal `string | null`.
+	 * Exiger le type `Numero` entier l aurait force a recopier ces quatre
+	 * lignes ; la fonction ne lit que l identifiant et les parcelles, elle ne
+	 * demande donc que ca.
+	 */
+	const ailleurs = [
+		{ id: 'a', parcelles: ['49007000DM0145'], point: [-0.5, 47.4], codePostal: null },
+		{ id: 'b', parcelles: ['49007000DM0304'], point: [-0.5, 47.4], codePostal: null }
+	];
+	assert.deepEqual(parcellesDesAutresNumeros(ailleurs, 'a'), ['49007000DM0304']);
+});

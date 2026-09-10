@@ -143,9 +143,15 @@ interface NumeroBrut {
  * UN NUMERO ABSENT DE LA LISTE NE COUPE RIEN. Sans ce garde, une adresse que
  * la BAN ne connait pas verrait TOUTES les parcelles de la voie declarees
  * ailleurs, et perdrait ses secondaires sans que personne ait rien declare.
+ *
+ * ELLE NE DEMANDE QUE LES DEUX CHAMPS QU'ELLE LIT, et c'est ce qui la rend
+ * partageable. Un site n'ecrit pas forcement ses numeros comme `Numero` : chez
+ * edifiable le point est un couple `[lon, lat]` et le code postal peut manquer,
+ * donc exiger le type entier obligeait a recopier ces quatre lignes plutot qu'a
+ * les appeler - exactement la duplication que ce module existe pour supprimer.
  */
 export function parcellesDesAutresNumeros(
-	numeros: readonly Numero[],
+	numeros: readonly { readonly id: string; readonly parcelles: readonly string[] }[],
 	id: string
 ): readonly string[] {
 	if (!numeros.some((n) => n.id === id)) return [];
