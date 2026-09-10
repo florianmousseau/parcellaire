@@ -13,7 +13,7 @@
  */
 
 import { nomDeLaCommune } from './arrondissements.ts';
-import { lireSansCache } from './reseau.ts';
+import { lire, JOUR } from './reseau.ts';
 
 const LOOKUP = 'https://plateforme.adresse.data.gouv.fr/lookup';
 const GEOCODE = 'https://api-adresse.data.gouv.fr/search';
@@ -213,7 +213,7 @@ function pointDe(brut: PointBrut | null | undefined): Point | null {
 }
 
 async function json(url: string): Promise<unknown> {
-	const reponse = await lireSansCache(url);
+	const reponse = await lire(url, JOUR);
 	if (reponse.status === 404) return null;
 	if (!reponse.ok) throw new Error(`Base Adresse Nationale : HTTP ${reponse.status}`);
 	return reponse.json();

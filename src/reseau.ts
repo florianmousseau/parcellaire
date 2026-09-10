@@ -53,18 +53,6 @@ export async function lire(url: string, secondes: number): Promise<Response> {
 }
 
 /**
- * LE MEME APPEL, BORNE MAIS SANS CACHE D'ARETE.
- *
- * Pour les appels dont on a MESURE que `cacheEverything` change la reponse -
- * ceux du cadastre, qui portent leur geometrie dans la requete. Le detail et
- * la mesure sont au-dessus de `cadastre.traits`. Le vide de cache est un choix
- * date, pas un oubli : l'echeance, elle, les concerne comme les autres.
- */
-export async function lireSansCache(url: string): Promise<Response> {
-	return fetch(url, options(null));
-}
-
-/**
  * Le JSON d'une source, ou `null` si elle ne repond pas.
  *
  * Une source muette ne doit jamais vider une page : le plan cadastral reste
