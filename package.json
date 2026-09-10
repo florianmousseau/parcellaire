@@ -39,6 +39,7 @@
 		"./lambert": "./dist/lambert.js",
 		"./plan": "./dist/plan.js",
 		"./reseau": "./dist/reseau.js",
+		"./rnb": "./dist/rnb.js",
 		"./vue": "./dist/vue.js"
 	},
 	"scripts": {

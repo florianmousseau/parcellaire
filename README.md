@@ -16,7 +16,8 @@ Extraits de [aucadastre.fr](https://aucadastre.fr) et
 | ----------------------------- | --------------------------------------------------------------------- |
 | `parcellaire/ban`             | La Base Adresse Nationale : une voie, une commune, la recherche       |
 | `parcellaire/cadastre`        | Les parcelles de l'IGN, et laquelle porte une adresse                 |
-| `parcellaire/bati`            | Les bâtiments du Référentiel National des Bâtiments                   |
+| `parcellaire/bati`            | Les bâtiments de la BD TOPO : forme, hauteur, nombre d’étages         |
+| `parcellaire/rnb`             | Le bâtiment d’une adresse, et la part posée sur chaque parcelle       |
 | `parcellaire/plan`            | Le tracé d'un plan cadastral, en SVG, calculé sur le serveur          |
 | `parcellaire/cotes`           | La longueur de chaque limite d'une parcelle, et sa nature             |
 | `parcellaire/vue`             | Le zoom et le déplacement d'un plan, par l'adresse                    |
@@ -26,14 +27,19 @@ Extraits de [aucadastre.fr](https://aucadastre.fr) et
 | `parcellaire/arrondissements` | Paris, Lyon et Marseille : le code a interroger, le nom a afficher    |
 | `parcellaire/casse`           | La casse d'un nom propre français                                     |
 | `parcellaire/francais`        | Les articles : « de Nantes », « du Mans », « de la Mayenne »          |
+| `parcellaire/fonds`           | Les fonds de carte : cadastre, photo, plan IGN, et leur adresse WMS   |
+| `parcellaire/cadastre-gouv`   | La recherche du service cadastre.gouv.fr                              |
 
 ### Ce qui n'a pas encore pu partir
 
-`fonds.ts` et `cadastre-gouv.ts`, qui fabriquent les adresses des fonds de
-carte, lisent la liste MOISSONNEE des communes que le service de la DGFiP sert
-vraiment. Cette liste est une donnee, elle vit dans le site. Les faire voyager
-demande de leur passer cette liste en parametre, et une extraction ne doit pas
-changer une signature en passant : ce sera son propre chantier.
+Le retour d'attente et l'aide à la saisie sont écrits DEUX fois : c'est du code
+de DOM, lié au balisage de chaque site, et ce qui se dessine n'appartient pas au
+paquet.
+
+`toponyme.ts` chez edifiable répond à la même question que `francais.ts`, avec
+une AUTRE implémentation : 1 076 désaccords sur 32 735 noms de communes, tous
+sur l'article « La », qui ne se contracte pas. Les échanger change un texte
+visible en ligne : c'est une décision, pas une extraction.
 
 ## Ce qu'il ne contient pas
 
@@ -45,7 +51,7 @@ mêmes couleurs, ni les mêmes URL, ni la même façon de nommer une page.
 liste des communes ni celle des départements.
 
 **Aucune dépendance à un moteur d'exécution.** Pas de `cloudflare:workers`, pas
-de variable de build, pas de base de données : douze modules qui n'utilisent que
+de variable de build, pas de base de données : quinze modules qui n'utilisent que
 `fetch` et le calcul. C'est cette pureté qui rend le paquet transportable, et
 c'est le critère qui a servi à tracer sa frontière.
 
