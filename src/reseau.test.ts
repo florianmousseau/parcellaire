@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { lire, lireSansCache, JOUR } from './reseau.ts';
+import { lire, JOUR } from './reseau.ts';
 
 /*
  * CE QUE CE BANC TIENT : qu'aucun appel sortant ne parte sans echeance.
@@ -9,10 +9,10 @@ import { lire, lireSansCache, JOUR } from './reseau.ts';
  * Rien dans un type ni dans un lint ne voit un `signal` oublie - c'est une
  * option de plus dans un objet - donc c'est ici que ca se mesure.
  *
- * Et le cache est le SECOND point : `cacheEverything` a fait perdre a une page
- * d'edifiable sa deuxieme parcelle le 2026-09-10 (voir le commentaire au-dessus
- * de `cadastre.traits`). Les deux fonctions ne different que par lui, et un
- * banc qui ne le regarde pas laisserait la difference se refermer.
+ * Le cache, lui, a ete accuse a tort le meme jour d'avoir fait perdre a une page
+ * sa deuxieme parcelle : la remesure ne l'a jamais reproduit, et le commentaire
+ * au-dessus de `cadastre.traits` raconte comment une seule observation a suffi
+ * a designer la mauvaise cause. Le banc verifie donc qu'il est bien la.
  */
 
 interface Options {
@@ -44,18 +44,7 @@ test('un appel range au bord part avec une echeance ET son cache', async () => {
 	assert.deepEqual(o.cf, { cacheEverything: true, cacheTtl: JOUR });
 });
 
-test('un appel sans cache garde son echeance, et ne porte AUCUN cf', async () => {
-	const o = await optionsDe(() => lireSansCache('https://exemple.test/x'));
-	assert.ok(o.signal instanceof AbortSignal, 'aucune echeance');
-	assert.equal(o.cf, undefined);
-});
-
-test('les deux annoncent qui appelle', async () => {
-	for (const appel of [
-		() => lire('https://exemple.test/x', JOUR),
-		() => lireSansCache('https://exemple.test/x')
-	]) {
-		const o = await optionsDe(appel);
-		assert.match(o.headers?.['User-Agent'] ?? '', /^aucadastre\//u);
-	}
+test('un appel annonce qui il est', async () => {
+	const o = await optionsDe(() => lire('https://exemple.test/x', JOUR));
+	assert.match(o.headers?.['User-Agent'] ?? '', /^aucadastre\//u);
 });

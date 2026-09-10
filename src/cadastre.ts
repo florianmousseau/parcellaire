@@ -14,7 +14,7 @@
 
 import { communeDuCadastre, nomDeLaCommune } from './arrondissements.ts';
 import { anneauxDe, contient, distanceAuBord, type Contour } from './geometrie.ts';
-import { lireSansCache } from './reseau.ts';
+import { lire, SEMAINE } from './reseau.ts';
 
 const API = 'https://apicarto.ign.fr/api/cadastre';
 
@@ -61,37 +61,42 @@ const entier = (valeur: unknown): number | null =>
 	typeof valeur === 'number' && Number.isFinite(valeur) ? valeur : null;
 
 /*
- * POURQUOI CES APPELS NE PASSENT PAS PAR `reseau.lire` (2026-09-10).
+ * UNE SEULE OBSERVATION NE DESIGNE PAS UNE CAUSE (2026-09-10).
  *
- * Ils ont ete branches dessus le matin meme, pour gagner le cache d'arete
- * qu'edifiable perdait en quittant son propre `amont()`. Rendu le soir : sur
- * `edifiable.fr/plu/trelaze-49353/voie/rue-emile-chaillou?n=22`, la page ne
- * servait plus qu'AD 525 - la deuxieme parcelle du numero avait disparu, alors
- * que la meme fonction, appelee depuis node, rendait bien AD 525 et AD 526.
+ * Ces appels ont ete branches sur `reseau.lire` le matin, debranches le soir,
+ * et rebranches dans la foulee. La boucle vaut d'etre ecrite, parce que c'est
+ * le raisonnement qui etait faux, pas le code.
  *
- * Le seul ecart etait `cf: { cacheEverything: true, cacheTtl }` sur ce `fetch`.
- * Retire, la page reserre les deux ; remis, elle en perd une. Mesure faite deux
- * fois, sur un etat local neuf, avec deux adresses (le 12 et le 22 de la meme
- * rue) : les deux perdaient leur seconde parcelle.
+ * Le soir, sur `edifiable.fr/plu/trelaze-49353/voie/rue-emile-chaillou?n=22`,
+ * la page ne servait plus qu'AD 525 : la deuxieme parcelle du numero avait
+ * disparu. J'ai retire `cf` dans `node_modules`, reconstruit, et les deux
+ * parcelles sont revenues. Conclusion tiree : le cache d'arete change ce que
+ * la source repond. Reverte, commentaire ecrit ici meme, et c'etait FAUX.
  *
- * CE QUI N'EST PAS EXPLIQUE : par quel mecanisme. L'URL fait 276 signes, loin
- * de toute borne de cle de cache, et la reponse revient - la parcelle
- * principale se trouve encore. Ce qui change est le CONTENU rendu, pas sa
- * presence, et c'est exactement le genre de panne qui ne se voit pas dans un
- * type ni dans un test unitaire.
+ * J'avais change DEUX choses et lu comme si une seule avait bouge : l'option
+ * `cf`, et le dossier `--persist-to` du serveur local. Remesure derriere :
  *
- * Donc on ne remet pas ce cache tant que le mecanisme n'est pas mesure, et pas
- * seulement sur `wrangler dev` : la page servie est le seul juge. Un correctif
- * qui rend la page plus rapide et fausse n'est pas un correctif.
+ *   pin incrimine, etat local NEUF        -> AD 525 et AD 526
+ *   pin incrimine, ANCIEN etat local      -> AD 525 et AD 526
+ *   les deux, sur le 12 de la meme rue    -> AD 515 et AD 514
+ *   apicarto appele deux fois avec `cf` et deux fois sans, meme requete
+ *     -> meme statut, memes 55 709 octets, memes 80 parcelles, AD 525,
+ *        AD 526 et AD 984 dans les quatre. Le cache marche : 106 ms au
+ *        deuxieme appel contre 299 au premier.
  *
- * L'ECHEANCE, ELLE, S'APPLIQUE : `lireSansCache` la porte. Les deux options
- * n'ont rien a voir l'une avec l'autre, et se priver de la seconde parce que la
- * premiere a mordu laisserait ces appels PENDRE.
+ * La panne du soir ne s'est jamais reproduite. Reste une reponse partielle
+ * d'apicarto pendant une minute, ce qui est un fait de la source, pas du code.
+ *
+ * CE QUI EN RESTE, ET QUI EST LA VRAIE LECON : une page servie reste le bon
+ * juge - un type et un test unitaire ne voient rien de tout cela - mais une
+ * SEULE lecture ne tranche rien. Avant d'accuser un changement, rejouer la configuration qui a
+ * echoue - a l'identique, en ne bougeant qu'UNE variable - et mesurer la source
+ * elle-meme plutot que la page, qui a dix raisons de varier.
  */
 async function traits(couche: string, geom: object, limite?: number): Promise<Trait[]> {
 	const parametres = new URLSearchParams({ geom: JSON.stringify(geom) });
 	if (limite !== undefined) parametres.set('_limit', String(limite));
-	const reponse = await lireSansCache(`${API}/${couche}?${parametres.toString()}`);
+	const reponse = await lire(`${API}/${couche}?${parametres.toString()}`, SEMAINE);
 	if (!reponse.ok) throw new Error(`API Carto cadastre : HTTP ${reponse.status}`);
 	const brut = (await reponse.json()) as { features?: unknown };
 	return Array.isArray(brut.features) ? (brut.features as Trait[]) : [];
@@ -169,7 +174,7 @@ export async function parcelleParIdentifiant(idu: string): Promise<Parcelle | nu
 		section: morceaux.section,
 		numero: morceaux.numero
 	});
-	const reponse = await lireSansCache(`${API}/parcelle?${parametres.toString()}`);
+	const reponse = await lire(`${API}/parcelle?${parametres.toString()}`, SEMAINE);
 	if (!reponse.ok) return null;
 	const brut = (await reponse.json()) as { features?: unknown };
 	const rendus = Array.isArray(brut.features) ? (brut.features as Trait[]) : [];
