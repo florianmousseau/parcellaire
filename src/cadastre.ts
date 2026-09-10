@@ -14,9 +14,9 @@
 
 import { communeDuCadastre, nomDeLaCommune } from './arrondissements.ts';
 import { anneauxDe, contient, distanceAuBord, type Contour } from './geometrie.ts';
+import { lireSansCache } from './reseau.ts';
 
 const API = 'https://apicarto.ign.fr/api/cadastre';
-const UA = 'aucadastre/1.0 (+https://aucadastre.fr)';
 
 export interface Parcelle {
 	readonly idu: string;
@@ -83,13 +83,15 @@ const entier = (valeur: unknown): number | null =>
  * Donc on ne remet pas ce cache tant que le mecanisme n'est pas mesure, et pas
  * seulement sur `wrangler dev` : la page servie est le seul juge. Un correctif
  * qui rend la page plus rapide et fausse n'est pas un correctif.
+ *
+ * L'ECHEANCE, ELLE, S'APPLIQUE : `lireSansCache` la porte. Les deux options
+ * n'ont rien a voir l'une avec l'autre, et se priver de la seconde parce que la
+ * premiere a mordu laisserait ces appels PENDRE.
  */
 async function traits(couche: string, geom: object, limite?: number): Promise<Trait[]> {
 	const parametres = new URLSearchParams({ geom: JSON.stringify(geom) });
 	if (limite !== undefined) parametres.set('_limit', String(limite));
-	const reponse = await fetch(`${API}/${couche}?${parametres.toString()}`, {
-		headers: { 'User-Agent': UA }
-	});
+	const reponse = await lireSansCache(`${API}/${couche}?${parametres.toString()}`);
 	if (!reponse.ok) throw new Error(`API Carto cadastre : HTTP ${reponse.status}`);
 	const brut = (await reponse.json()) as { features?: unknown };
 	return Array.isArray(brut.features) ? (brut.features as Trait[]) : [];
@@ -167,9 +169,7 @@ export async function parcelleParIdentifiant(idu: string): Promise<Parcelle | nu
 		section: morceaux.section,
 		numero: morceaux.numero
 	});
-	const reponse = await fetch(`${API}/parcelle?${parametres.toString()}`, {
-		headers: { 'User-Agent': UA }
-	});
+	const reponse = await lireSansCache(`${API}/parcelle?${parametres.toString()}`);
 	if (!reponse.ok) return null;
 	const brut = (await reponse.json()) as { features?: unknown };
 	const rendus = Array.isArray(brut.features) ? (brut.features as Trait[]) : [];

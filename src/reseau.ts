@@ -24,12 +24,44 @@ export const JOUR = 86_400;
 /** Une semaine : le plan cadastral et les fichiers de ventes, qui bougent par lots. */
 export const SEMAINE = 604_800;
 
+/**
+ * L'ECHEANCE D'UN APPEL SORTANT, en millisecondes.
+ *
+ * Un appel sans echeance ne tombe pas : il PEND, et il tient la page entiere
+ * en otage alors qu'elle a autre chose a montrer. Le chiffre vient de la mesure
+ * d'edifiable du 2026-09-05 : sur une page de rue, Georisques met jusqu'a 6,2 s
+ * sur un point neuf. En dessous de dix secondes on couperait des lectures qui
+ * allaient aboutir.
+ *
+ * ELLE NE CREE AUCUNE FORME DE PANNE NOUVELLE. `json()` rend deja `null` quand
+ * la source ne repond pas, et `traits()` comme `ban.json` levent deja sur un
+ * 5xx : une echeance atteinte arrive chez l'appelant exactement comme un 502,
+ * qui peut tomber a chaque appel depuis toujours. Ce qu'elle change est un
+ * blocage sans fin, qui lui n'a pas de forme du tout.
+ */
+const ECHEANCE = 10_000;
+
+const options = (secondes: number | null): OptionsCloudflare => ({
+	headers: { 'User-Agent': UA },
+	signal: AbortSignal.timeout(ECHEANCE),
+	...(secondes === null ? {} : { cf: { cacheEverything: true, cacheTtl: secondes } })
+});
+
+/** Un appel range au bord, et borne dans le temps. */
 export async function lire(url: string, secondes: number): Promise<Response> {
-	const options: OptionsCloudflare = {
-		headers: { 'User-Agent': UA },
-		cf: { cacheEverything: true, cacheTtl: secondes }
-	};
-	return fetch(url, options);
+	return fetch(url, options(secondes));
+}
+
+/**
+ * LE MEME APPEL, BORNE MAIS SANS CACHE D'ARETE.
+ *
+ * Pour les appels dont on a MESURE que `cacheEverything` change la reponse -
+ * ceux du cadastre, qui portent leur geometrie dans la requete. Le detail et
+ * la mesure sont au-dessus de `cadastre.traits`. Le vide de cache est un choix
+ * date, pas un oubli : l'echeance, elle, les concerne comme les autres.
+ */
+export async function lireSansCache(url: string): Promise<Response> {
+	return fetch(url, options(null));
 }
 
 /**
