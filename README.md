@@ -12,23 +12,23 @@ Extraits de [aucadastre.fr](https://aucadastre.fr) et
 
 ## Ce que le paquet contient
 
-| Module                        | Ce qu'il fait                                                         |
-| ----------------------------- | --------------------------------------------------------------------- |
-| `parcellaire/ban`             | La Base Adresse Nationale : une voie, une commune, la recherche       |
-| `parcellaire/cadastre`        | Les parcelles de l'IGN, et laquelle porte une adresse                 |
-| `parcellaire/bati`            | Les bâtiments de la BD TOPO : forme, hauteur, nombre d’étages         |
-| `parcellaire/rnb`             | Le bâtiment d’une adresse, et la part posée sur chaque parcelle       |
-| `parcellaire/plan`            | Le tracé d'un plan cadastral, en SVG, calculé sur le serveur          |
-| `parcellaire/cotes`           | La longueur de chaque limite d'une parcelle, et sa nature             |
-| `parcellaire/vue`             | Le zoom et le déplacement d'un plan, par l'adresse                    |
-| `parcellaire/geometrie`       | Anneaux, appartenance d'un point, distance à un bord                  |
-| `parcellaire/lambert`         | WGS 84 vers Lambert-93, distances et aires en mètres                  |
-| `parcellaire/reseau`          | Un `fetch` qui met en cache et qui abandonne au bout du temps imparti |
-| `parcellaire/arrondissements` | Paris, Lyon et Marseille : le code a interroger, le nom a afficher    |
-| `parcellaire/casse`           | La casse d'un nom propre français                                     |
-| `parcellaire/francais`        | Les articles : « de Nantes », « du Mans », « de la Mayenne »          |
-| `parcellaire/fonds`           | Les fonds de carte : cadastre, photo, plan IGN, et leur adresse WMS   |
-| `parcellaire/cadastre-gouv`   | La recherche du service cadastre.gouv.fr                              |
+| Module                        | Ce qu'il fait                                                          |
+| ----------------------------- | ---------------------------------------------------------------------- |
+| `parcellaire/ban`             | La Base Adresse Nationale : une voie, une commune, la recherche        |
+| `parcellaire/cadastre`        | Les parcelles de l'IGN, et laquelle porte une adresse                  |
+| `parcellaire/bati`            | Les bâtiments de la BD TOPO : forme, hauteur, étages, logements, année |
+| `parcellaire/rnb`             | Le bâtiment d’une adresse, et la part posée sur chaque parcelle        |
+| `parcellaire/plan`            | Le tracé d'un plan cadastral, en SVG, calculé sur le serveur           |
+| `parcellaire/cotes`           | La longueur de chaque limite d'une parcelle, et sa nature              |
+| `parcellaire/vue`             | Le zoom et le déplacement d'un plan, par l'adresse                     |
+| `parcellaire/geometrie`       | Anneaux, appartenance d'un point, distance à un bord                   |
+| `parcellaire/lambert`         | WGS 84 vers Lambert-93, distances et aires en mètres                   |
+| `parcellaire/reseau`          | Un `fetch` qui met en cache et qui abandonne au bout du temps imparti  |
+| `parcellaire/arrondissements` | Paris, Lyon et Marseille : le code a interroger, le nom a afficher     |
+| `parcellaire/casse`           | La casse d'un nom propre français                                      |
+| `parcellaire/francais`        | Les articles : « de Nantes », « du Mans », « de la Mayenne »           |
+| `parcellaire/fonds`           | Les fonds de carte : cadastre, photo, plan IGN, et leur adresse WMS    |
+| `parcellaire/cadastre-gouv`   | La recherche du service cadastre.gouv.fr                               |
 
 ### Ce qui n'a pas encore pu partir
 
