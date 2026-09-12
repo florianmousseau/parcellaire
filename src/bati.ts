@@ -28,9 +28,18 @@ export interface Batiment {
 	readonly usage: string;
 	readonly nature: string;
 	readonly centre: { readonly lon: number; readonly lat: number };
+	/**
+	 * Les logements du batiment, que la BD TOPO reprend des fichiers fonciers :
+	 * 1 pour une maison, davantage pour un immeuble, 0 pour une annexe. `null`
+	 * quand elle ne le dit pas, ce qui arrive sur un usage « Indifférencié ».
+	 */
+	readonly logements?: number | null;
+	/** L'annee de construction (`date_d_apparition`), `null` quand elle manque. */
+	readonly annee?: number | null;
 }
 
-interface Trait {
+/** Un objet du WFS tel qu'il arrive, avant lecture. */
+export interface Trait {
 	properties?: Record<string, unknown> | null;
 	geometry?: { type?: unknown; coordinates?: unknown } | null;
 }
@@ -39,6 +48,29 @@ const texte = (valeur: unknown): string => (typeof valeur === 'string' ? valeur 
 
 const nombre = (valeur: unknown): number | null =>
 	typeof valeur === 'number' && Number.isFinite(valeur) ? valeur : null;
+
+/* « 1895-01-01Z » : l'annee seule a un sens, le jour est une convention du
+   fichier foncier qui la porte. */
+const anneeDe = (valeur: unknown): number | null => {
+	const annee = /^(\d{4})-/.exec(texte(valeur))?.[1];
+	return annee === undefined ? null : Number(annee);
+};
+
+/** Un batiment lu dans un objet du WFS, ou `null` sans contour. */
+export function batimentDuTrait(t: Trait): Batiment | null {
+	const contour = anneauxDe(t.geometry);
+	if (contour.length === 0) return null;
+	return {
+		contour,
+		hauteur: nombre(t.properties?.hauteur),
+		etages: nombre(t.properties?.nombre_d_etages),
+		usage: texte(t.properties?.usage_1),
+		nature: texte(t.properties?.nature),
+		centre: centreDe(contour) ?? { lon: 0, lat: 0 },
+		logements: nombre(t.properties?.nombre_de_logements),
+		annee: anneeDe(t.properties?.date_d_apparition)
+	};
+}
 
 /** Le bati d'un rectangle autour d'un point. Le rayon est celui du plan. */
 export async function batiAutour(
@@ -57,20 +89,7 @@ export async function batiAutour(
 		`&BBOX=${boite}&COUNT=300&OUTPUTFORMAT=application/json`;
 	const brut = (await json(url, SEMAINE)) as { features?: unknown } | null;
 	if (!Array.isArray(brut?.features)) return [];
-	return (brut.features as Trait[])
-		.map((t): Batiment | null => {
-			const contour = anneauxDe(t.geometry);
-			if (contour.length === 0) return null;
-			return {
-				contour,
-				hauteur: nombre(t.properties?.hauteur),
-				etages: nombre(t.properties?.nombre_d_etages),
-				usage: texte(t.properties?.usage_1),
-				nature: texte(t.properties?.nature),
-				centre: centreDe(contour) ?? { lon: 0, lat: 0 }
-			};
-		})
-		.filter((b): b is Batiment => b !== null);
+	return (brut.features as Trait[]).map(batimentDuTrait).filter((b): b is Batiment => b !== null);
 }
 
 /**
