@@ -167,6 +167,48 @@ test('le contour rend son périmètre, son aire et son écart au cadastre', () =
 	assert.equal(m.indeterminees, 2);
 });
 
+test('le périmètre compte AUSSI la limite trop courte pour être cotée', () => {
+	/*
+	 * Le defaut repare le 2026-09-17 : `COTE_MINIMALE` retire du dessin les
+	 * limites qu'aucun chiffre ne tiendrait, et elles sortaient du total avec
+	 * lui. Ici un pan coupe de 99 cm remplace le coin sud-est : il ne se cote
+	 * pas, il se compte. Sur le corpus, 6 a 12 % des parcelles en portent un.
+	 */
+	const pancoupe: PointL93[] = [
+		[0, 0],
+		[19.3, 0],
+		[20, 0.7],
+		[20, 30],
+		[0, 30],
+		[0, 0]
+	];
+	const m = mesurerLeContour(pancoupe, [], [], null);
+	const cotes = m.cotes.reduce((n, c) => n + c.longueur, 0);
+	assert.equal(m.cotes.length, 4, 'le pan coupé ne se cote pas');
+	assert.ok(Math.abs(cotes - 98.6) < 0.01, String(cotes));
+	assert.equal(m.perimetre, 99.59);
+});
+
+test('le côté rend le RANG de sa voie, pas seulement son nom', () => {
+	// L'appelant attache a une voie ce que ce module n'a pas a connaitre - son
+	// classement, son numero. Le rang lui rend son objet ; un zero par defaut
+	// lui aurait rendu la premiere venue.
+	const ailleurs: Voie = {
+		lignes: [
+			[
+				[-30, 200],
+				[60, 200]
+			]
+		],
+		largeur: 5,
+		nom: 'rue d ailleurs'
+	};
+	const cotes = cotesDeLaParcelle(PARCELLE, [ailleurs, RUE], [VOISINE]);
+	assert.equal(par(cotes, 0).rangDeLaVoie, 1);
+	assert.equal(par(cotes, 0).voie, 'rue de la Mesure');
+	assert.equal(par(cotes, 1).rangDeLaVoie, null, 'aucune voie devant le côté est');
+});
+
 test('sans contenance connue, aucun écart n est invente', () => {
 	// Une source muette ne se remplace pas par un zero : le zero se lirait comme
 	// « le cadastre et la mesure tombent d'accord ».

@@ -79,6 +79,16 @@ export interface Cote {
 	readonly aLAxe: number | null;
 	/** Le nom de cette voie, quand la BD TOPO en donne un. */
 	readonly voie: string | null;
+	/**
+	 * Le rang de cette voie dans la liste recue, ou `null`.
+	 *
+	 * Ce module ne connait d'une voie que sa geometrie, sa largeur et son nom.
+	 * L'appelant, lui, en sait plus - edifiable y attache le classement
+	 * administratif, le numero et le caractere prive, dont ses regles ont
+	 * besoin. Le rang lui rend SON objet sans que celui-ci ait a traverser ce
+	 * module.
+	 */
+	readonly rangDeLaVoie: number | null;
 	/** La part du cote que longe une parcelle voisine, de 0 a 1. */
 	readonly partagee: number;
 }
@@ -159,10 +169,10 @@ function voieDevant(
 	b: PointL93,
 	dehors: PointL93,
 	voies: readonly Voie[]
-): { distance: number; voie: Voie } | null {
+): { distance: number; voie: Voie; rang: number } | null {
 	const points = echantillonner(a, b);
-	let meilleure: { distance: number; voie: Voie } | null = null;
-	for (const v of voies) {
+	let meilleure: { distance: number; voie: Voie; rang: number } | null = null;
+	for (const [rang, v] of voies.entries()) {
 		const auDehors = mediane(
 			points.map((p) => auxLignes([p[0] + dehors[0] * SONDE, p[1] + dehors[1] * SONDE], v.lignes))
 		);
@@ -180,7 +190,7 @@ function voieDevant(
 		 */
 		const depuisLaLimite = mediane(points.map((p) => auxLignes(p, v.lignes)));
 		if (meilleure === null || depuisLaLimite < meilleure.distance) {
-			meilleure = { distance: depuisLaLimite, voie: v };
+			meilleure = { distance: depuisLaLimite, voie: v, rang };
 		}
 	}
 	return meilleure;
@@ -269,16 +279,40 @@ export function cotesDeLaParcelle(
 			nature,
 			aLAxe: devant?.distance ?? null,
 			voie: devant?.voie.nom ?? null,
+			rangDeLaVoie: devant?.rang ?? null,
 			partagee
 		});
 	}
 	return cotes;
 }
 
+/** Le tour de l'anneau, sommet par sommet : tout y est, meme ce qui ne se cote pas. */
+function tourDuContour(anneau: readonly PointL93[]): number {
+	let tour = 0;
+	for (let i = 0; i < anneau.length - 1; i++)
+		tour += distance(anneau[i] as PointL93, anneau[i + 1] as PointL93);
+	return tour;
+}
+
 /** Ce que le contour d'une parcelle mesure, une fois ses cotes poses. */
 export interface Mesures {
 	readonly cotes: readonly Cote[];
-	/** La somme des cotes retenus, en metres. */
+	/**
+	 * LE TOUR DU CONTOUR CADASTRAL, ET NON LA SOMME DES COTES POSES.
+	 *
+	 * Les deux ont ete confondus jusqu'au 2026-09-17, et l'ecart n'est pas
+	 * theorique : `COTE_MINIMALE` ecarte du DESSIN les limites trop courtes
+	 * pour porter un chiffre lisible, et elles sortaient du TOTAL avec lui.
+	 * Mesure sur 1 778 anneaux (Vitry 0A et 0E, Toulouse AC, Lille AB,
+	 * Marseille 0B) : 6 a 12 % des parcelles portent au moins une limite fondue
+	 * de moins de 1,20 m, et leur perimetre publie manquait 1 m en median,
+	 * jusqu'a 13,5 m. La parcelle E 71 de Vitry annoncait 50,45 m pour 54,59 m
+	 * de tour, soit 7,6 % de moins.
+	 *
+	 * Ce qui tranche : `aire` se calcule sur l'anneau ENTIER, donc le perimetre
+	 * doit decrire le meme polygone - sinon deux chiffres poses cote a cote
+	 * parlent de deux formes differentes. Ce qu'on ne cote pas reste mesure.
+	 */
 	readonly perimetre: number;
 	/** L'aire du contour cadastral, en metres carres. */
 	readonly aire: number;
@@ -312,7 +346,7 @@ export function mesurerLeContour(
 	const surface = Math.round(aire(anneau));
 	return {
 		cotes,
-		perimetre: Number(cotes.reduce((n, c) => n + c.longueur, 0).toFixed(1)),
+		perimetre: Number(tourDuContour(anneau).toFixed(2)),
 		aire: surface,
 		ecart: contenance === null ? null : surface - contenance,
 		surVoie: cotes.filter((c) => c.nature === 'sur-voie').length,
