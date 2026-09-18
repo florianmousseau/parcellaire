@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cadreSurLObjet, dessiner, pasEchelle } from './plan.ts';
+import { boiteDesParcelles, cadreSurLObjet, dessiner, pasEchelle } from './plan.ts';
 import type { Cadre } from './plan.ts';
 import type { Parcelle } from './cadastre.ts';
 
@@ -110,4 +110,26 @@ test('un objet sans etendue rend son cadre tel quel, plutot qu une division par 
 	const enorme = cadreSurLObjet(boite, 48.78, 10_000);
 	assert.ok(enorme.est - enorme.ouest > boite.est - boite.ouest);
 	assert.ok(Number.isFinite(enorme.est - enorme.ouest));
+});
+
+// Une forme qui ne vient pas du cadastre francais : sans elle, rien ne mesure
+// que le dessin reste appelable de l'exterieur (voir la tete de plan.ts).
+test('dessine une parcelle de Tailte Eireann, qui n a que son identifiant et son contour', () => {
+	const parcelle = {
+		idu: '218493',
+		contour: [
+			[
+				[-7.3302, 53.53],
+				[-7.3301, 53.53],
+				[-7.3301, 53.5301],
+				[-7.3302, 53.5301],
+				[-7.3302, 53.53]
+			]
+		] as const
+	};
+	const dessin = dessiner([parcelle], '218493');
+	assert.ok(dessin);
+	assert.equal(dessin.traces.length, 1);
+	assert.equal(dessin.traces[0]?.cible, true);
+	assert.ok(boiteDesParcelles([parcelle]));
 });

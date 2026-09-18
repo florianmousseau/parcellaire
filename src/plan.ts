@@ -13,8 +13,25 @@
  * parcelles ne ressemblent plus a celles du plan officiel.
  */
 
-import type { Parcelle } from './cadastre.ts';
-import type { Batiment } from './bati.ts';
+import type { Contour } from './geometrie.ts';
+
+/*
+ * CE QUE LE DESSIN LIT, ET RIEN DE PLUS.
+ *
+ * Une parcelle se dessine avec son identifiant et son contour ; un batiment
+ * avec son contour. Le type entier du cadastre francais (section, numero,
+ * contenance, commune) n'est jamais lu ici, et l'exiger fermait le dessin a son
+ * premier consommateur : les parcelles de Tailte Eireann, pour everytownland,
+ * n'ont ni section ni code INSEE. Un elargissement, pas une rupture - tout
+ * appel existant type toujours.
+ */
+export interface ParcelleADessiner {
+	readonly idu: string;
+	readonly contour: Contour;
+}
+export interface Contourne {
+	readonly contour: Contour;
+}
 
 export interface Trace {
 	readonly d: string;
@@ -62,9 +79,9 @@ const COTE_MAX = 640;
  * seule parcelle principale montrait la moitie du terrain sans le dire.
  */
 export function dessiner(
-	parcelles: readonly Parcelle[],
+	parcelles: readonly ParcelleADessiner[],
 	cibles: string | readonly string[],
-	batiments: readonly Batiment[] = [],
+	batiments: readonly Contourne[] = [],
 	/*
 	 * LE CADRE IMPOSE, QUAND C'EST LE LECTEUR QUI CHOISIT CE QU'IL REGARDE.
 	 *
@@ -204,7 +221,7 @@ export const MARGE_DE_L_ADRESSE = 120;
  * Le rectangle qui contient toutes ces parcelles, ou `null` si aucune n'a de
  * contour. C'est ce qu'on donne a `cadreSurLObjet` pour cadrer une adresse.
  */
-export function boiteDesParcelles(parcelles: readonly Parcelle[]): Cadre | null {
+export function boiteDesParcelles(parcelles: readonly Contourne[]): Cadre | null {
 	let ouest = Infinity;
 	let est = -Infinity;
 	let sud = Infinity;
