@@ -104,7 +104,9 @@ export const FONDS: readonly Definition[] = [
 		 */
 		code: 'cote',
 		intitule: 'Plan coté',
-		nom: 'Coté',
+		/* « Coté » est le mot du dessinateur : deux lecteurs neufs d'aucadastre, le
+		   2026-09-23, ne l'ont pas compris. L'onglet dit ce qu'il montre. */
+		nom: 'Longueurs',
 		dit: 'la longueur de chaque limite',
 		couche: null,
 		source: 'DGFiP (parcellaire), IGN BD TOPO (voies)'
@@ -120,7 +122,9 @@ export const FONDS: readonly Definition[] = [
 	{
 		code: 'plan',
 		intitule: 'Plan IGN',
-		nom: 'Plan IGN',
+		/* L'onglet dit « Carte » : « Plan IGN » ne se distinguait pas du plan
+		   cadastral pour qui ne connait pas l'IGN (meme releve). */
+		nom: 'Carte',
 		dit: 'les rues nommées autour',
 		couche: 'GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2',
 		source: 'IGN, Plan IGN'
