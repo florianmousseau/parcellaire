@@ -7,10 +7,12 @@ import {
 	FONDS,
 	MILLESIMES,
 	millesimeDemande,
+	REPLI_DU_CADASTRE,
 	SONDE_PLEINE,
 	urlDeLaSonde,
 	urlDuFond,
-	urlDuMillesime
+	urlDuMillesime,
+	urlDuRepliDuCadastre
 } from './fonds.ts';
 
 /*
@@ -180,4 +182,22 @@ test('un millesime inconnu retombe sur le dernier, pas sur une erreur', () => {
 	assert.equal(millesimeDemande('1950').libelle, '1950-1965');
 	assert.equal(millesimeDemande(null).cle, 'auj');
 	assert.equal(millesimeDemande('1789').cle, 'auj');
+});
+
+test('le repli du cadastre est le Parcellaire Express de l IGN, au meme cadre, a la meme finesse', () => {
+	/*
+	 * Mesure du 2026-10-14 : leur WMS en panne toute une matinee, et la meme
+	 * donnee servie saine par l'IGN. Le repli ne figure pas parmi les fonds :
+	 * il remplace l'image de la DGFiP quand elle echoue, et rien d'autre.
+	 */
+	const url = urlDuRepliDuCadastre(CADRE, 640, 480);
+	const p = parametres(url);
+	assert.equal(new URL(url).hostname, 'data.geopf.fr');
+	assert.equal(p.get('LAYERS'), REPLI_DU_CADASTRE.couche);
+	assert.equal(p.get('FORMAT'), 'image/png');
+	assert.equal(p.get('CRS'), 'CRS:84');
+	assert.equal(p.get('BBOX'), '2.397500,48.786200,2.402500,48.789000');
+	assert.equal(p.get('WIDTH'), '1280');
+	assert.equal(p.get('HEIGHT'), '960');
+	assert.ok(!FONDS.some((f) => f.couche === REPLI_DU_CADASTRE.couche));
 });
