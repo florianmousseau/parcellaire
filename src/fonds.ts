@@ -312,6 +312,31 @@ export function urlDuFond(
 	return imageWms(couche, cadre, largeur, hauteur, fond === 'photo' ? 'jpeg' : 'png', true);
 }
 
+/*
+ * LE REPLI DU CADASTRE, QUAND LEUR SERVICE TOMBE.
+ *
+ * Le 2026-10-14, `inspire.cadastre.gouv.fr` a rendu tour a tour 503, une boucle
+ * de redirections vers lui-meme, puis 404 sur tout GetMap, pendant des heures.
+ * Sans image, la figure ne montrait plus que notre dessin, sans numero de
+ * parcelle ni nom de section. L'IGN sert la MEME donnee - le Parcellaire
+ * Express est le plan cadastral de la DGFiP, redessine par l'IGN - avec ses
+ * numeros et son bati, sur le serveur des autres fonds, mesure sain le meme
+ * jour (200 image/png en 0,1 a 0,4 s au cadre d'une voie).
+ *
+ * Ce n'est pas un fond de plus : il ne s'offre pas en onglet, il se demande a
+ * la place du plan de la DGFiP quand celui-ci echoue, et le plan de la DGFiP
+ * reprend des qu'il repond. Ce qui change pour le lecteur : la feuille n'est
+ * plus creme mais saumon, et la source sous le plan le dit.
+ */
+export const REPLI_DU_CADASTRE = {
+	couche: 'CADASTRALPARCELS.PARCELLAIRE_EXPRESS',
+	source: 'IGN, Parcellaire Express'
+} as const;
+
+/** L'image de repli du cadastre, au cadre exact du dessin, chez l'IGN. */
+export const urlDuRepliDuCadastre = (cadre: Cadre, largeur: number, hauteur: number): string =>
+	imageWms(REPLI_DU_CADASTRE.couche, cadre, largeur, hauteur, 'png', true);
+
 /**
  * Une image du WMS de la Geoplateforme, au cadre exact demande.
  *
