@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { batimentDuTrait, type Trait } from './bati.ts';
+import { batimentDuPoint, batimentDuTrait, type Batiment, type Trait } from './bati.ts';
 
 /*
  * Trois batiments releves le 2026-09-12 autour du 60 rue Pasteur a
@@ -50,4 +50,38 @@ test('une annexe compte zero logement, un usage inconnu ne compte rien', () => {
 
 test('un objet sans contour ne fait pas un batiment', () => {
 	assert.equal(batimentDuTrait({ properties: { nombre_de_logements: 1 }, geometry: null }), null);
+});
+
+const batiment = (anneau: [number, number][], usage: string): Batiment =>
+	batimentDuTrait({
+		properties: { usage_1: usage },
+		geometry: { type: 'Polygon', coordinates: [anneau] }
+	})!;
+
+test('le batiment qui contient le point passe avant une annexe plus proche de son centre', () => {
+	// Un immeuble de 150 m d'est en ouest ; le point est a son bout est, a 2 m d'une annexe.
+	const long = batiment(
+		[
+			[2.4, 48.8],
+			[2.402, 48.8],
+			[2.402, 48.8001],
+			[2.4, 48.8001],
+			[2.4, 48.8]
+		],
+		'Résidentiel'
+	);
+	const annexe = batiment(
+		[
+			[2.40203, 48.8],
+			[2.40206, 48.8],
+			[2.40206, 48.80003],
+			[2.40203, 48.80003],
+			[2.40203, 48.8]
+		],
+		'Annexe'
+	);
+	assert.equal(batimentDuPoint([annexe, long], 2.40199, 48.80005)?.usage, 'Résidentiel');
+	// Hors de tout batiment, le plus proche par son bord, a moins de 25 m.
+	assert.equal(batimentDuPoint([annexe, long], 2.4021, 48.80001)?.usage, 'Annexe');
+	assert.equal(batimentDuPoint([annexe, long], 2.41, 48.81), null);
 });

@@ -17,7 +17,7 @@
  */
 
 import { json, SEMAINE } from './reseau.ts';
-import { anneauxDe, centreDe, type Contour } from './geometrie.ts';
+import { anneauxDe, centreDe, contient, distanceAuBord, type Contour } from './geometrie.ts';
 
 const WFS = 'https://data.geopf.fr/wfs/ows';
 
@@ -93,7 +93,9 @@ export async function batiAutour(
 }
 
 /**
- * Le batiment le plus proche d'un point, s'il est assez pres pour etre le sien.
+ * Le batiment qui contient le point, sinon le plus proche par son BORD, s'il est
+ * assez pres pour etre le sien. Mesure au centre, une adresse au bout d'un long
+ * immeuble passait a plus de 25 m et recevait l'annexe d'a cote.
  *
  * Vingt-cinq metres : au-dela, le point d'une adresse designe un terrain nu, une
  * cour ou la voie elle-meme, et nommer alors le batiment d'en face serait pire
@@ -104,14 +106,12 @@ export function batimentDuPoint(
 	lon: number,
 	lat: number
 ): Batiment | null {
-	const METRES_PAR_DEGRE = 111_320;
-	const kx = Math.cos((lat * Math.PI) / 180);
+	const dedans = batiments.find((b) => contient(b.contour, lon, lat));
+	if (dedans !== undefined) return dedans;
 	let plusProche: Batiment | null = null;
 	let plusCourt = Infinity;
 	for (const b of batiments) {
-		const dx = (b.centre.lon - lon) * kx;
-		const dy = b.centre.lat - lat;
-		const metres = Math.hypot(dx, dy) * METRES_PAR_DEGRE;
+		const metres = distanceAuBord(b.contour, lon, lat);
 		if (metres < plusCourt) {
 			plusCourt = metres;
 			plusProche = b;
