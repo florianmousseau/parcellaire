@@ -67,6 +67,40 @@ test('sans paramètre, la vue est celle par défaut et non le niveau zéro', () 
 	assert.equal(vueDemandee(new URLSearchParams('z=0'), VITRY).niveau, 0);
 });
 
+test('un morceau vide du centre n est pas un zéro', () => {
+	/*
+	 * `Number('')` vaut 0 : un lien coupe juste apres la virgule ouvrait le plan
+	 * sur la latitude 0, dans le golfe de Guinee, au lieu de la parcelle.
+	 */
+	for (const brut of [
+		'2.4,',
+		',48.8',
+		',',
+		'%20,%20',
+		'2.4,%20',
+		'0x2,48',
+		'1e1,48',
+		'Infinity,48'
+	]) {
+		const v = vueDemandee(new URLSearchParams(`c=${brut}`), VITRY);
+		assert.equal(v.lon, VITRY.lon, brut);
+		assert.equal(v.lat, VITRY.lat, brut);
+	}
+	// Ce que nos boutons ecrivent se relit a l'identique, signe compris.
+	const v = vueDemandee(new URLSearchParams('c=-0.550000,47.470000'), VITRY);
+	assert.equal(v.lon, -0.55);
+	assert.equal(v.lat, 47.47);
+});
+
+test('un niveau blanc ou écrit autrement qu en chiffres garde le niveau par défaut', () => {
+	// `Number(' ')` vaut 0, le niveau le plus LARGE : le piege du parametre
+	// absent, par une autre porte.
+	for (const brut of ['%20', '0x2', '1e0', '%2B2']) {
+		assert.equal(vueDemandee(new URLSearchParams(`z=${brut}`), VITRY).niveau, VITRY.niveau, brut);
+	}
+	assert.equal(vueDemandee(new URLSearchParams('z=%202%20'), VITRY).niveau, 2);
+});
+
 test('le centre demandé est lu en longitude puis latitude', () => {
 	// L'ordre est celui de GeoJSON, pas celui d'un GPS : inverser tombe dans le
 	// golfe de Guinee, et ca ne se voit qu'a l'oeil.

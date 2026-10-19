@@ -62,6 +62,33 @@ export function rayonDegres(niveau: number, lat: number): number {
 	return metres / (METRES_PAR_DEGRE_LAT * Math.max(kx, 0.1));
 }
 
+/*
+ * UN MORCEAU VIDE N'EST PAS UN ZERO, pas plus qu'un parametre absent.
+ * `Number('')` et `Number(' ')` valent 0 : un lien coupe juste apres la virgule,
+ * `?c=2.4,`, ouvrait le plan sur la latitude 0, dans le golfe de Guinee, et
+ * `?z=%20` au niveau le plus large. `Number` lit aussi `0x2`, `1e1` et
+ * `Infinity`, qu'aucun de nos boutons n'ecrit. Un nombre de l'adresse s'ecrit
+ * donc en chiffres, ou il ne se lit pas : c'est la forme qu'ecrit `enParametres`.
+ */
+const ENTIER = /^-?\d+$/;
+const CHIFFRES = /^\d+$/;
+
+/* Un entier, ou un entier, un point et des chiffres. Coupe au point plutot
+   qu'ecrit en une seule expression, que le lint refuse pour son retour arriere. */
+const estDecimal = (net: string): boolean => {
+	const [entier = '', fraction, ...reste] = net.split('.');
+	return (
+		reste.length === 0 && ENTIER.test(entier) && (fraction === undefined || CHIFFRES.test(fraction))
+	);
+};
+
+const lu = (brut: string | null | undefined, forme: (net: string) => boolean): number => {
+	const net = (brut ?? '').trim();
+	return forme(net) ? Number(net) : Number.NaN;
+};
+
+const estEntier = (net: string): boolean => ENTIER.test(net);
+
 /**
  * La vue demandee par l'URL, ou celle par defaut.
  *
@@ -69,13 +96,11 @@ export function rayonDegres(niveau: number, lat: number): number {
  * `?c=` vient d'un lien recopie a la main aussi souvent que d'un de nos boutons.
  */
 export function vueDemandee(params: URLSearchParams, defaut: Vue): Vue {
-	const centre = (params.get('c') ?? '').split(',').map(Number);
-	const lon = centre[0];
-	const lat = centre[1];
+	const morceaux = (params.get('c') ?? '').split(',');
+	const lon = lu(morceaux[0], estDecimal);
+	const lat = lu(morceaux[1], estDecimal);
 	const bonCentre =
-		centre.length === 2 &&
-		typeof lon === 'number' &&
-		typeof lat === 'number' &&
+		morceaux.length === 2 &&
 		Number.isFinite(lon) &&
 		Number.isFinite(lat) &&
 		Math.abs(lon) <= 180 &&
@@ -86,8 +111,7 @@ export function vueDemandee(params: URLSearchParams, defaut: Vue): Vue {
 	 * page s'ouvrait au niveau le plus LARGE - 1 600 m - au lieu du cadre calcule
 	 * sur la parcelle. Il faut donc lire la PRESENCE avant la valeur.
 	 */
-	const brut = params.get('z');
-	const demande = brut === null || brut === '' ? Number.NaN : Number(brut);
+	const demande = lu(params.get('z'), estEntier);
 	const niveau = Number.isInteger(demande) ? borne(demande) : defaut.niveau;
 	return bonCentre ? { lon, lat, niveau } : { ...defaut, niveau };
 }
