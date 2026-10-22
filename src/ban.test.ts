@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parcelleDeclaree, parcellesDesAutresNumeros, type Numero } from './ban.ts';
+import { commune, parcelleDeclaree, parcellesDesAutresNumeros, type Numero } from './ban.ts';
 
 /*
  * LA BAN ECRIT SES PARCELLES DANS LA FORME DES FICHIERS FONCIERS -
@@ -74,4 +74,31 @@ test('une liste de numeros qui n est pas celle de ce paquet passe quand meme', (
 		{ id: 'b', parcelles: ['49007000DM0304'], point: [-0.5, 47.4], codePostal: null }
 	];
 	assert.deepEqual(parcellesDesAutresNumeros(ailleurs, 'a'), ['49007000DM0304']);
+});
+
+test('UNE BOITE ABSENTE N EST PAS UN POINT : sans quatre nombres a leur place, la commune n a pas de centre', async () => {
+	const avant = globalThis.fetch;
+	const repondre = (displayBBox: unknown): void => {
+		globalThis.fetch = (async () =>
+			Response.json({ codeCommune: '94081', nomCommune: 'Vitry', displayBBox })) as typeof fetch;
+	};
+	try {
+		repondre([2.36, 48.77, 2.42, 48.81]);
+		const lue = await commune('94081');
+		assert.ok(lue?.centre !== null && lue?.centre !== undefined);
+		assert.ok(Math.abs(lue.centre.lon - 2.39) < 1e-9 && Math.abs(lue.centre.lat - 48.79) < 1e-9);
+		for (const boite of [
+			undefined,
+			[],
+			[2.36, 48.77, 2.42],
+			['x', 2.36, 48.77, 2.42, 48.81],
+			[2.36, null, 2.42, 48.81],
+			[2.36, 48.77, Number.NaN, 48.81]
+		]) {
+			repondre(boite);
+			assert.equal((await commune('94081'))?.centre, null, JSON.stringify(boite));
+		}
+	} finally {
+		globalThis.fetch = avant;
+	}
 });

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CLE_BAN, parcellesRetenues, PART_MINIMALE } from './rnb.ts';
+import { batimentDeLAdresse, CLE_BAN, parcellesRetenues, PART_MINIMALE } from './rnb.ts';
 
 /*
  * LE SEUIL EST DERIVE, PAS CHOISI : releve du 2026-09-07 sur 72 adresses de six
@@ -72,4 +72,38 @@ test('ce qui n est pas une cle est refuse', () => {
 	// Il n'y a que 2A et 2B : un departement en lettres ne s'invente pas.
 	assert.equal(CLE_BAN.test('2C004_0970_00001'), false);
 	assert.equal(CLE_BAN.test('49353_0365'), false);
+});
+
+const avecLaReponse = async (
+	reponse: () => Response,
+	suite: () => Promise<void>
+): Promise<void> => {
+	const avant = globalThis.fetch;
+	globalThis.fetch = (async () => reponse()) as typeof fetch;
+	try {
+		await suite();
+	} finally {
+		globalThis.fetch = avant;
+	}
+};
+
+test('UNE PANNE N EST PAS UNE ABSENCE : un referentiel muet leve, une adresse sans batiment rend null', async () => {
+	await avecLaReponse(
+		() => new Response('indisponible', { status: 503 }),
+		async () => {
+			await assert.rejects(batimentDeLAdresse('94081_7000_00012'), /HTTP 503/);
+		}
+	);
+	await avecLaReponse(
+		() => new Response('<html>', { status: 200 }),
+		async () => {
+			await assert.rejects(batimentDeLAdresse('94081_7000_00012'));
+		}
+	);
+	await avecLaReponse(
+		() => Response.json({ results: [] }),
+		async () => {
+			assert.equal(await batimentDeLAdresse('94081_7000_00012'), null);
+		}
+	);
 });
