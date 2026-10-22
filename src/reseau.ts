@@ -61,11 +61,24 @@ export async function lire(url: string, secondes: number): Promise<Response> {
  */
 export async function json(url: string, secondes: number): Promise<unknown> {
 	try {
-		const reponse = await lire(url, secondes);
-		return reponse.ok ? await reponse.json() : null;
+		return await jsonOuPanne(url, secondes);
 	} catch {
 		return null;
 	}
+}
+
+/**
+ * Le JSON d'une source, et une PANNE qui leve avec sa cause.
+ *
+ * Pour les lectures dont l'absence a un sens : « aucun batiment a cette
+ * adresse » et « le referentiel n'a pas repondu » ne meritent pas la meme
+ * suite chez l'appelant, et un `null` les confondait. Leve sur une erreur de
+ * transport, un statut non 2xx ou un corps qui n'est pas du JSON.
+ */
+export async function jsonOuPanne(url: string, secondes: number): Promise<unknown> {
+	const reponse = await lire(url, secondes);
+	if (!reponse.ok) throw new Error(`${new URL(url).hostname} : HTTP ${String(reponse.status)}`);
+	return reponse.json();
 }
 
 /**

@@ -90,8 +90,12 @@ export interface VoieBreve {
 export interface Commune {
 	readonly insee: string;
 	readonly nom: string;
-	/** Le centre de la boite englobante, seul point que la source donne. */
-	readonly centre: Point;
+	/**
+	 * Le centre de la boite englobante, seul point que la source donne ; `null`
+	 * quand elle n'en donne pas. Un `{ lon: 0, lat: 0 }` a sa place etait un
+	 * point valide pour le typage, dans le golfe de Guinee pour la carte.
+	 */
+	readonly centre: Point | null;
 	readonly departement: { readonly code: string; readonly nom: string };
 	readonly codesPostaux: readonly string[];
 	readonly population: number | null;
@@ -272,18 +276,17 @@ export async function voie(id: string): Promise<Voie | null> {
  * le dit au lieu de laisser croire le contraire.
  */
 function cadreDe(brut: unknown): Cadre | null {
-	const b = Array.isArray(brut) ? brut.filter((v): v is number => typeof v === 'number') : [];
-	const [ouest, sud, est, nord] = b;
-	return ouest !== undefined && sud !== undefined && est !== undefined && nord !== undefined
-		? { ouest, sud, est, nord }
-		: null;
+	/* Quatre nombres finis, a leur place, ou rien : en retirer un invalide
+	   decalait les autres, et le sud devenait l'ouest. */
+	if (!Array.isArray(brut) || brut.length !== 4) return null;
+	if (!brut.every((v): v is number => typeof v === 'number' && Number.isFinite(v))) return null;
+	const [ouest, sud, est, nord] = brut as [number, number, number, number];
+	return { ouest, sud, est, nord };
 }
 
-function centreDe(brut: unknown): Point {
+function centreDe(brut: unknown): Point | null {
 	const c = cadreDe(brut);
-	return c === null
-		? { lon: 0, lat: 0 }
-		: { lon: (c.ouest + c.est) / 2, lat: (c.sud + c.nord) / 2 };
+	return c === null ? null : { lon: (c.ouest + c.est) / 2, lat: (c.sud + c.nord) / 2 };
 }
 
 /** Une commune et ses voies, triees par nom. */

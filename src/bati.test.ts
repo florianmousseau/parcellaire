@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { batimentDuPoint, batimentDuTrait, type Batiment, type Trait } from './bati.ts';
+import { batiAutour, batimentDuPoint, batimentDuTrait, type Batiment, type Trait } from './bati.ts';
 
 /*
  * Trois batiments releves le 2026-09-12 autour du 60 rue Pasteur a
@@ -84,4 +84,16 @@ test('le batiment qui contient le point passe avant une annexe plus proche de so
 	// Hors de tout batiment, le plus proche par son bord, a moins de 25 m.
 	assert.equal(batimentDuPoint([annexe, long], 2.4021, 48.80001)?.usage, 'Annexe');
 	assert.equal(batimentDuPoint([annexe, long], 2.41, 48.81), null);
+});
+
+test('une source de bati muette leve au lieu de rendre un quartier sans batiment', async () => {
+	const avant = globalThis.fetch;
+	globalThis.fetch = (async () => new Response('', { status: 502 })) as typeof fetch;
+	try {
+		await assert.rejects(batiAutour(2.39, 48.79), /HTTP 502/);
+		globalThis.fetch = (async () => Response.json({ features: [] })) as typeof fetch;
+		assert.deepEqual(await batiAutour(2.39, 48.79), []);
+	} finally {
+		globalThis.fetch = avant;
+	}
 });

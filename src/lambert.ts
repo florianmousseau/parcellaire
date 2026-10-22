@@ -57,6 +57,21 @@ export function enLambert93([lon, lat]: PointWGS84): PointL93 {
 	return [XS + r * Math.sin(gamma), YS - r * Math.cos(gamma)];
 }
 
+/*
+ * LE DOMAINE DE LA PROJECTION : la France metropolitaine et la Corse, rien
+ * d'autre (EPSG:2154, emprise declaree par l'IGN : longitude -9,86 a 10,38,
+ * latitude 41,15 a 51,56). La formule calcule partout, et c'est le piege : la
+ * Reunion ou la Martinique en sortent en « metres » deformes que rien ne
+ * distingue d'une vraie cote. Un appelant qui IMPRIME une mesure verifie
+ * d'abord ici, et se tait hors domaine.
+ */
+const DOMAINE = { ouest: -9.86, est: 10.38, sud: 41.15, nord: 51.56 } as const;
+
+/** Vrai quand une longueur ou une aire calculee en Lambert-93 a ce point est une mesure. */
+export function dansLeDomaineDeLambert93([lon, lat]: PointWGS84): boolean {
+	return lon >= DOMAINE.ouest && lon <= DOMAINE.est && lat >= DOMAINE.sud && lat <= DOMAINE.nord;
+}
+
 /** La distance entre deux points projetes, en metres. */
 export const distance = (a: PointL93, b: PointL93): number => Math.hypot(b[0] - a[0], b[1] - a[1]);
 

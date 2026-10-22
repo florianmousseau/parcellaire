@@ -47,7 +47,7 @@
  * signale rien.
  */
 
-import { json, JOUR } from './reseau.ts';
+import { jsonOuPanne, JOUR } from './reseau.ts';
 
 const RNB = 'https://rnb-api.beta.gouv.fr/api/alpha/buildings/';
 
@@ -154,11 +154,12 @@ export function parcellesRetenues(plots: unknown): ParcelleDuBatiment[] {
  * pas un centre a partir de la forme, ce qui serait une deuxieme facon de
  * repondre a la meme question. Une adresse sans batiment connu rend `null`, et
  * c'est un cas ORDINAIRE - un terrain nu, une adresse neuve, une commune que le
- * referentiel n'a pas encore couverte.
+ * referentiel n'a pas encore couverte. Un referentiel qui ne repond pas LEVE,
+ * avec sa cause : ce n'est pas une adresse sans batiment.
  */
 export async function batimentDeLAdresse(cleBan: string): Promise<BatimentDeLAdresse | null> {
 	if (!CLE_BAN.test(cleBan)) return null;
-	const brut = (await json(
+	const brut = (await jsonOuPanne(
 		`${RNB}?cle_interop_ban=${encodeURIComponent(cleBan)}&withPlots=1`,
 		JOUR
 	)) as ReponseRnb | null;

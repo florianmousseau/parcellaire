@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+	dansLeDomaineDeLambert93,
 	enLambert93,
 	aire,
 	distance,
@@ -143,5 +144,25 @@ test("l'echantillonnage garde les deux bouts et respecte son pas", () => {
 	assert.deepEqual(pts[pts.length - 1], [10, 0]);
 	for (let i = 1; i < pts.length; i++) {
 		assert.ok(distance(pts[i - 1]!, pts[i]!) <= 1.5 + 1e-9);
+	}
+});
+
+test('LE DOMAINE : la metropole et la Corse se mesurent, l outre-mer non', () => {
+	for (const point of [
+		[2.39, 48.79],
+		[9.15, 41.39],
+		[-4.49, 48.39],
+		[7.75, 48.58]
+	] as const) {
+		assert.equal(dansLeDomaineDeLambert93(point), true, String(point));
+	}
+	for (const point of [
+		[55.45, -20.88],
+		[-61.07, 14.6],
+		[-52.33, 4.94],
+		[45.23, -12.78],
+		[-56.17, 46.78]
+	] as const) {
+		assert.equal(dansLeDomaineDeLambert93(point), false, String(point));
 	}
 });
