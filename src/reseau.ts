@@ -82,6 +82,22 @@ export async function jsonOuPanne(url: string, secondes: number): Promise<unknow
 }
 
 /**
+ * Le tableau `champ` de l'enveloppe d'une source, ou une PANNE DE CONTRAT.
+ *
+ * Un 200 sans ce tableau est une erreur metier ou un schema change : lu comme
+ * un tableau vide, il faisait d'une panne un quartier sans parcelle ni
+ * batiment. Un tableau vide, lui, reste une vraie absence.
+ */
+export function tableauDe(brut: unknown, champ: string, source: string): unknown[] {
+	const valeur: unknown =
+		typeof brut === 'object' && brut !== null
+			? (brut as Record<string, unknown>)[champ]
+			: undefined;
+	if (!Array.isArray(valeur)) throw new Error(`${source} : reponse sans ${champ}`);
+	return valeur;
+}
+
+/**
  * La ligne d'un fichier national qui commence par un code INSEE.
  *
  * DEUX FICHIERS DE L'ETAT SE LISENT AINSI - le zonage A/B/C et la couverture

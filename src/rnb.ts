@@ -47,7 +47,7 @@
  * signale rien.
  */
 
-import { jsonOuPanne, JOUR } from './reseau.ts';
+import { jsonOuPanne, JOUR, tableauDe } from './reseau.ts';
 
 const RNB = 'https://rnb-api.beta.gouv.fr/api/alpha/buildings/';
 
@@ -159,11 +159,12 @@ export function parcellesRetenues(plots: unknown): ParcelleDuBatiment[] {
  */
 export async function batimentDeLAdresse(cleBan: string): Promise<BatimentDeLAdresse | null> {
 	if (!CLE_BAN.test(cleBan)) return null;
-	const brut = (await jsonOuPanne(
-		`${RNB}?cle_interop_ban=${encodeURIComponent(cleBan)}&withPlots=1`,
-		JOUR
-	)) as ReponseRnb | null;
-	for (const b of brut?.results ?? []) {
+	const resultats = tableauDe(
+		await jsonOuPanne(`${RNB}?cle_interop_ban=${encodeURIComponent(cleBan)}&withPlots=1`, JOUR),
+		'results',
+		'RNB'
+	) as NonNullable<ReponseRnb['results']>;
+	for (const b of resultats) {
 		if (b.status !== CONSTRUIT) continue;
 		const c = b.point?.coordinates;
 		if (!Array.isArray(c) || typeof c[0] !== 'number' || typeof c[1] !== 'number') continue;

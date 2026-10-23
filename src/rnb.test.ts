@@ -101,6 +101,12 @@ test('UNE PANNE N EST PAS UNE ABSENCE : un referentiel muet leve, une adresse sa
 		}
 	);
 	await avecLaReponse(
+		() => Response.json({ detail: 'Erreur interne' }),
+		async () => {
+			await assert.rejects(batimentDeLAdresse('94081_7000_00012'), /RNB : reponse sans results/);
+		}
+	);
+	await avecLaReponse(
 		() => Response.json({ results: [] }),
 		async () => {
 			assert.equal(await batimentDeLAdresse('94081_7000_00012'), null);

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
 	decouperIdentifiant,
+	parcelleAuPoint,
 	rattacherLaParcelle,
 	sectionLisible,
 	type Parcelle
@@ -234,4 +235,28 @@ test('une section a une lettre perd son zero de comblement', () => {
 	assert.equal(sectionLisible('AB'), 'AB');
 	assert.equal(sectionLisible('ZC'), 'ZC');
 	assert.equal(sectionLisible('BQ'), 'BQ');
+});
+
+test('une enveloppe sans features leve, une contenance absente reste inconnue', async () => {
+	const avant = globalThis.fetch;
+	const repondre = (corps: unknown) => {
+		globalThis.fetch = (async () => Response.json(corps)) as typeof fetch;
+	};
+	try {
+		repondre({ code: 400, message: 'geom invalide' });
+		await assert.rejects(
+			parcelleAuPoint(2.39, 48.79),
+			/API Carto cadastre : reponse sans features/
+		);
+		repondre({ features: [] });
+		assert.equal(await parcelleAuPoint(2.39, 48.79), null);
+		repondre({ features: [{ properties: { idu: '94081000AB0001' }, geometry: null }] });
+		assert.equal((await parcelleAuPoint(2.39, 48.79))?.contenance, null);
+		repondre({
+			features: [{ properties: { idu: '94081000AB0001', contenance: 412 }, geometry: null }]
+		});
+		assert.equal((await parcelleAuPoint(2.39, 48.79))?.contenance, 412);
+	} finally {
+		globalThis.fetch = avant;
+	}
 });
