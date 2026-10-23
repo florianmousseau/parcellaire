@@ -14,7 +14,7 @@
 
 import { communeDuCadastre, nomDeLaCommune } from './arrondissements.ts';
 import { anneauxDe, contient, distanceAuBord, type Contour } from './geometrie.ts';
-import { lire, SEMAINE } from './reseau.ts';
+import { lire, SEMAINE, tableauDe } from './reseau.ts';
 
 const API = 'https://apicarto.ign.fr/api/cadastre';
 
@@ -23,7 +23,8 @@ export interface Parcelle {
 	readonly section: string;
 	readonly numero: string;
 	readonly prefixe: string;
-	readonly contenance: number;
+	/** `null` quand la source ne la donne pas : une surface inconnue n'est pas zero. */
+	readonly contenance: number | null;
 	readonly insee: string;
 	readonly commune: string;
 	readonly contour: Contour;
@@ -98,8 +99,7 @@ async function traits(couche: string, geom: object, limite?: number): Promise<Tr
 	if (limite !== undefined) parametres.set('_limit', String(limite));
 	const reponse = await lire(`${API}/${couche}?${parametres.toString()}`, SEMAINE);
 	if (!reponse.ok) throw new Error(`API Carto cadastre : HTTP ${reponse.status}`);
-	const brut = (await reponse.json()) as { features?: unknown };
-	return Array.isArray(brut.features) ? (brut.features as Trait[]) : [];
+	return tableauDe(await reponse.json(), 'features', 'API Carto cadastre') as Trait[];
 }
 
 const point = (lon: number, lat: number) => ({ type: 'Point', coordinates: [lon, lat] });
@@ -113,7 +113,7 @@ const parcelleDe = (t: Trait): Parcelle | null => {
 		section: texte(p?.section),
 		numero: texte(p?.numero),
 		prefixe: texte(p?.com_abs, '000'),
-		contenance: entier(p?.contenance) ?? 0,
+		contenance: entier(p?.contenance),
 		/*
 		 * L'INSEE SE LIT DANS L'IDENTIFIANT, PAS DANS `code_insee`. Les deux ne
 		 * different que dans les trois villes a arrondissements, ou `code_insee`
@@ -176,8 +176,7 @@ export async function parcelleParIdentifiant(idu: string): Promise<Parcelle | nu
 	});
 	const reponse = await lire(`${API}/parcelle?${parametres.toString()}`, SEMAINE);
 	if (!reponse.ok) return null;
-	const brut = (await reponse.json()) as { features?: unknown };
-	const rendus = Array.isArray(brut.features) ? (brut.features as Trait[]) : [];
+	const rendus = tableauDe(await reponse.json(), 'features', 'API Carto cadastre') as Trait[];
 	/*
 	 * LA BONNE SE CHERCHE, elle n'est jamais tenue pour la premiere. Sous une
 	 * ville a arrondissements, une section et un numero designent autant de

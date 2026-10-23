@@ -16,7 +16,7 @@
  * boite au large de la Somalie et zero batiment - sans erreur.
  */
 
-import { jsonOuPanne, SEMAINE } from './reseau.ts';
+import { jsonOuPanne, SEMAINE, tableauDe } from './reseau.ts';
 import { anneauxDe, centreDe, contient, distanceAuBord, type Contour } from './geometrie.ts';
 
 const WFS = 'https://data.geopf.fr/wfs/ows';
@@ -87,9 +87,8 @@ export async function batiAutour(
 	const url =
 		`${WFS}?SERVICE=WFS&REQUEST=GetFeature&VERSION=2.0.0&TYPENAMES=BDTOPO_V3:batiment` +
 		`&BBOX=${boite}&COUNT=300&OUTPUTFORMAT=application/json`;
-	const brut = (await jsonOuPanne(url, SEMAINE)) as { features?: unknown } | null;
-	if (!Array.isArray(brut?.features)) return [];
-	return (brut.features as Trait[]).map(batimentDuTrait).filter((b): b is Batiment => b !== null);
+	const traits = tableauDe(await jsonOuPanne(url, SEMAINE), 'features', 'BD TOPO') as Trait[];
+	return traits.map(batimentDuTrait).filter((b): b is Batiment => b !== null);
 }
 
 /**
