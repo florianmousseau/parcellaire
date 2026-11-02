@@ -1,6 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { commune, parcelleDeclaree, parcellesDesAutresNumeros, type Numero } from './ban.ts';
+import {
+	chercher,
+	chercherVoieAuPoint,
+	commune,
+	parcelleDeclaree,
+	parcellesDesAutresNumeros,
+	voiesVoisines,
+	type Numero
+} from './ban.ts';
 
 /*
  * LA BAN ECRIT SES PARCELLES DANS LA FORME DES FICHIERS FONCIERS -
@@ -103,6 +111,25 @@ test('UNE BOITE ABSENTE N EST PAS UN POINT : sans quatre nombres a leur place, l
 			repondre(boite);
 			assert.equal((await commune('94081'))?.centre, null, JSON.stringify(boite));
 		}
+	} finally {
+		globalThis.fetch = avant;
+	}
+});
+
+test('un 200 sans features est une panne, pas une recherche vide', async () => {
+	const avant = globalThis.fetch;
+	const repondre = (corps: unknown) => {
+		globalThis.fetch = (async () => Response.json(corps)) as typeof fetch;
+	};
+	try {
+		repondre({ message: 'contrat change' });
+		await assert.rejects(chercher('rue de la paix'), /reponse sans features/);
+		await assert.rejects(voiesVoisines(2.39, 48.79), /reponse sans features/);
+		await assert.rejects(chercherVoieAuPoint(2.39, 48.79), /reponse sans features/);
+		repondre({ features: [] });
+		assert.deepEqual(await chercher('rue de la paix'), []);
+		assert.deepEqual(await voiesVoisines(2.39, 48.79), []);
+		assert.equal(await chercherVoieAuPoint(2.39, 48.79), null);
 	} finally {
 		globalThis.fetch = avant;
 	}

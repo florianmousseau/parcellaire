@@ -68,6 +68,21 @@ export interface Dessin {
 const METRES_PAR_DEGRE_LAT = 111_320;
 const COTE_MAX = 640;
 
+/*
+ * PAR PARCOURS, jamais en arguments : `Math.min(...valeurs)` leve un
+ * `RangeError` au-dela de quelque cent mille sommets, et un contour detaille
+ * y suffit.
+ */
+const bornes = (valeurs: readonly number[]): [number, number] => {
+	let min = Infinity;
+	let max = -Infinity;
+	for (const v of valeurs) {
+		if (v < min) min = v;
+		if (v > max) max = v;
+	}
+	return [min, max];
+};
+
 /**
  * Le dessin des parcelles, les cibles en premier plan.
  *
@@ -105,13 +120,9 @@ export function dessiner(
 
 	const xs = parcelles.flatMap((p) => p.contour.flatMap((a) => a.map(([lon]) => lon * kx)));
 	const [minX, maxX] =
-		cadreImpose === undefined
-			? [Math.min(...xs), Math.max(...xs)]
-			: [cadreImpose.ouest * kx, cadreImpose.est * kx];
+		cadreImpose === undefined ? bornes(xs) : [cadreImpose.ouest * kx, cadreImpose.est * kx];
 	const [minY, maxY] =
-		cadreImpose === undefined
-			? [Math.min(...latitudes), Math.max(...latitudes)]
-			: [cadreImpose.sud, cadreImpose.nord];
+		cadreImpose === undefined ? bornes(latitudes) : [cadreImpose.sud, cadreImpose.nord];
 	const [etendueX, etendueY] = [maxX - minX, maxY - minY];
 	if (etendueX <= 0 || etendueY <= 0) return null;
 

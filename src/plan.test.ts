@@ -133,3 +133,13 @@ test('dessine une parcelle de Tailte Eireann, qui n a que son identifiant et son
 	assert.equal(dessin.traces[0]?.cible, true);
 	assert.ok(boiteDesParcelles([parcelle]));
 });
+
+test('un contour de deux cent mille sommets se dessine sans RangeError', () => {
+	const sommets = 200_000;
+	const anneau: [number, number][] = Array.from({ length: sommets }, (_, i) => {
+		const angle = (2 * Math.PI * i) / sommets;
+		return [2.39 + 0.001 * Math.cos(angle), 48.79 + 0.001 * Math.sin(angle)];
+	});
+	const detaillee: Parcelle = { ...carre('94081000BQ0134', 2.39, 48.79, 0.001), contour: [anneau] };
+	assert.notEqual(dessiner([detaillee], '94081000BQ0134'), null);
+});

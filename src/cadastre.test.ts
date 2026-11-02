@@ -5,7 +5,8 @@ import {
 	parcelleAuPoint,
 	rattacherLaParcelle,
 	sectionLisible,
-	type Parcelle
+	type Parcelle,
+	parcelleParIdentifiant
 } from './cadastre.ts';
 
 /*
@@ -256,6 +257,23 @@ test('une enveloppe sans features leve, une contenance absente reste inconnue', 
 			features: [{ properties: { idu: '94081000AB0001', contenance: 412 }, geometry: null }]
 		});
 		assert.equal((await parcelleAuPoint(2.39, 48.79))?.contenance, 412);
+	} finally {
+		globalThis.fetch = avant;
+	}
+});
+
+test('une panne de la source leve, seul un 404 dit la parcelle introuvable', async () => {
+	const avant = globalThis.fetch;
+	const repondre = (status: number) => {
+		globalThis.fetch = (async () => new Response('', { status })) as typeof fetch;
+	};
+	try {
+		repondre(503);
+		await assert.rejects(parcelleParIdentifiant('94081000AB0001'), /HTTP 503/);
+		repondre(429);
+		await assert.rejects(parcelleParIdentifiant('94081000AB0001'), /HTTP 429/);
+		repondre(404);
+		assert.equal(await parcelleParIdentifiant('94081000AB0001'), null);
 	} finally {
 		globalThis.fetch = avant;
 	}
