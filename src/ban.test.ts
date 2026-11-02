@@ -126,10 +126,22 @@ test('un 200 sans features est une panne, pas une recherche vide', async () => {
 		await assert.rejects(chercher('rue de la paix'), /reponse sans features/);
 		await assert.rejects(voiesVoisines(2.39, 48.79), /reponse sans features/);
 		await assert.rejects(chercherVoieAuPoint(2.39, 48.79), /reponse sans features/);
+		repondre(null);
+		await assert.rejects(chercher('rue de la paix'), /reponse sans features/);
 		repondre({ features: [] });
 		assert.deepEqual(await chercher('rue de la paix'), []);
 		assert.deepEqual(await voiesVoisines(2.39, 48.79), []);
 		assert.equal(await chercherVoieAuPoint(2.39, 48.79), null);
+	} finally {
+		globalThis.fetch = avant;
+	}
+});
+
+test('un 404 de la recherche reste une recherche vide', async () => {
+	const avant = globalThis.fetch;
+	globalThis.fetch = (async () => new Response('', { status: 404 })) as typeof fetch;
+	try {
+		assert.deepEqual(await chercher('rue de la paix'), []);
 	} finally {
 		globalThis.fetch = avant;
 	}

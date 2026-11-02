@@ -229,12 +229,18 @@ function pointDe(brut: PointBrut | null | undefined): Point | null {
  * change en amont doit se voir, pas vider la recherche en silence. Seul le 404
  * dit « rien ».
  */
+/* Le 404, distinct d'un corps JSON `null` servi en 200, qui reste une panne. */
+const INTROUVABLE = Symbol('introuvable');
+
 const featuresDe = (brut: unknown): unknown[] =>
-	brut === null ? [] : tableauDe(brut, 'features', 'Base Adresse Nationale');
+	brut === INTROUVABLE ? [] : tableauDe(brut, 'features', 'Base Adresse Nationale');
+
+/* Une fiche introuvable se lit `null`, comme avant. */
+const lookup = (brut: unknown): unknown => (brut === INTROUVABLE ? null : brut);
 
 async function json(url: string): Promise<unknown> {
 	const reponse = await lire(url, JOUR);
-	if (reponse.status === 404) return null;
+	if (reponse.status === 404) return INTROUVABLE;
 	if (!reponse.ok) throw new Error(`Base Adresse Nationale : HTTP ${reponse.status}`);
 	return reponse.json();
 }
@@ -248,7 +254,7 @@ async function json(url: string): Promise<unknown> {
  * la voie.
  */
 export async function voie(id: string): Promise<Voie | null> {
-	const brut = (await json(`${LOOKUP}/${encodeURIComponent(id)}`)) as VoieBrute | null;
+	const brut = lookup(await json(`${LOOKUP}/${encodeURIComponent(id)}`)) as VoieBrute | null;
 	const point = pointDe(brut?.position);
 	if (!brut || point === null) return null;
 	const numerosBruts = Array.isArray(brut.numeros) ? (brut.numeros as NumeroBrut[]) : [];
@@ -307,7 +313,7 @@ function centreDe(brut: unknown): Point | null {
 
 /** Une commune et ses voies, triees par nom. */
 export async function commune(insee: string): Promise<Commune | null> {
-	const brut = (await json(`${LOOKUP}/${encodeURIComponent(insee)}`)) as CommuneBrute | null;
+	const brut = lookup(await json(`${LOOKUP}/${encodeURIComponent(insee)}`)) as CommuneBrute | null;
 	if (!brut || texte(brut.codeCommune) === '') return null;
 	const voiesBrutes = Array.isArray(brut.voies) ? (brut.voies as VoieBrute[]) : [];
 	return {
