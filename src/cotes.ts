@@ -164,6 +164,9 @@ const auxLignes = (p: PointL93, lignes: readonly (readonly PointL93[])[]): numbe
  * qui tourne le dos a la meme rue. Sans lui, une parcelle d'angle voyait sa
  * limite arriere classee sur voie.
  */
+/** Jusqu'ou l'axe d'une voie borde encore une limite : sa demi-chaussee et son bord. */
+const seuilDe = (v: Voie): number => (v.largeur ?? LARGEUR_PAR_DEFAUT) / 2 + MARGE_DE_BORD;
+
 function voieDevant(
 	a: PointL93,
 	b: PointL93,
@@ -189,7 +192,18 @@ function voieDevant(
 		 * et c'est un nombre que le lecteur va comparer a son metre.
 		 */
 		const depuisLaLimite = mediane(points.map((p) => auxLignes(p, v.lignes)));
-		if (meilleure === null || depuisLaLimite < meilleure.distance) {
+		/*
+		 * CHAQUE VOIE SE JUGE A SA PROPRE LARGEUR AVANT D'ETRE COMPAREE. Prendre
+		 * l'axe le plus proche puis lui appliquer son seuil laissait une allee de
+		 * 2 m a 7 m masquer une chaussee de 12 m a 9 m, qui borde la limite.
+		 */
+		const atteint = depuisLaLimite <= seuilDe(v);
+		const meilleureAtteint = meilleure !== null && meilleure.distance <= seuilDe(meilleure.voie);
+		if (
+			meilleure === null ||
+			(atteint && !meilleureAtteint) ||
+			(atteint === meilleureAtteint && depuisLaLimite < meilleure.distance)
+		) {
 			meilleure = { distance: depuisLaLimite, voie: v, rang };
 		}
 	}
@@ -262,10 +276,9 @@ export function cotesDeLaParcelle(
 		const dehors = normaleSortante(a, b, horaire);
 		const devant = voieDevant(a, b, dehors, voies);
 		const partagee = partPartagee(a, b, voisines);
-		const seuil = (devant?.voie.largeur ?? LARGEUR_PAR_DEFAUT) / 2 + MARGE_DE_BORD;
 
 		let nature: NatureDeLimite;
-		if (devant !== null && devant.distance <= seuil) nature = 'sur-voie';
+		if (devant !== null && devant.distance <= seuilDe(devant.voie)) nature = 'sur-voie';
 		else if (partagee >= PART_SEPARATIVE) nature = 'separative';
 		else nature = 'indeterminee';
 

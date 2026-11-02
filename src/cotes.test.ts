@@ -272,3 +272,17 @@ test('la fusion garde les rangs pour que le dessin retrouve ses sommets', () => 
 	}
 	assert.equal(limites.at(-1)?.[1], droite.length - 1);
 });
+
+test('une allee plus proche ne masque pas la chaussee qui borde la limite', () => {
+	const ligneA = (y: number): Voie['lignes'] => [
+		[
+			[-30, y],
+			[60, y]
+		]
+	];
+	const chaussee: Voie = { lignes: ligneA(-9), largeur: 12, nom: 'avenue large' };
+	const allee: Voie = { lignes: ligneA(-7), largeur: 2, nom: 'allee' };
+	const sud = par(cotesDeLaParcelle(PARCELLE, [chaussee, allee], []), 0);
+	assert.equal(sud.nature, 'sur-voie');
+	assert.equal(sud.voie, 'avenue large');
+});

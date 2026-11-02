@@ -170,6 +170,14 @@ export function parcellesDesAutresNumeros(
 export function parcelleDeclaree(brut: unknown, insee: string): string | null {
 	if (typeof brut !== 'string' || brut.length < 9 || insee.length !== 5) return null;
 	const queue = brut.slice(-9);
+	/*
+	 * La TETE porte le departement et le code de la commune, dans un ordre qui
+	 * varie ("490353", "940810") : une reference d'une autre commune
+	 * designerait ici un autre terrain sous le meme numero. Elle se refuse
+	 * plutot que de se rattacher a la page.
+	 */
+	const tete = brut.slice(0, -9).trim();
+	if (!tete.startsWith(insee.slice(0, 2)) || !tete.includes(insee.slice(2))) return null;
 	const prefixe = queue.slice(0, 3);
 	const reste = queue.slice(3);
 	if (!/^[0-9A-Z]{2}\d{4}$/.test(reste)) return null;
