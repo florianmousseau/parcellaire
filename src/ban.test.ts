@@ -22,6 +22,11 @@ test('un prefixe de commune fusionnee est garde tel quel', () => {
 	assert.equal(parcelleDeclaree('313950026AB0931', '31395'), '31395026AB0931');
 });
 
+test('une reference d une autre commune ne se rattache pas a la page', () => {
+	assert.equal(parcelleDeclaree('940810   AB0123', '49353'), null);
+	assert.equal(parcelleDeclaree('490354   AD0526', '49353'), null);
+});
+
 test('une forme qui n est pas une reference ne rend rien', () => {
 	assert.equal(parcelleDeclaree('', '49353'), null);
 	assert.equal(parcelleDeclaree('AD0526', '49353'), null);
