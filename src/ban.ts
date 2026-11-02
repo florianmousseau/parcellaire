@@ -13,7 +13,7 @@
  */
 
 import { nomDeLaCommune } from './arrondissements.ts';
-import { lire, JOUR } from './reseau.ts';
+import { lire, tableauDe, JOUR } from './reseau.ts';
 
 const LOOKUP = 'https://plateforme.adresse.data.gouv.fr/lookup';
 const GEOCODE = 'https://api-adresse.data.gouv.fr/search';
@@ -224,6 +224,14 @@ function pointDe(brut: PointBrut | null | undefined): Point | null {
 	return { lon, lat };
 }
 
+/*
+ * UN 200 SANS `features` EST UNE PANNE, pas une recherche vide : un contrat
+ * change en amont doit se voir, pas vider la recherche en silence. Seul le 404
+ * dit « rien ».
+ */
+const featuresDe = (brut: unknown): unknown[] =>
+	brut === null ? [] : tableauDe(brut, 'features', 'Base Adresse Nationale');
+
 async function json(url: string): Promise<unknown> {
 	const reponse = await lire(url, JOUR);
 	if (reponse.status === 404) return null;
@@ -343,10 +351,8 @@ export interface VoieProche {
  */
 export async function chercherVoieAuPoint(lon: number, lat: number): Promise<VoieProche | null> {
 	const url = `https://api-adresse.data.gouv.fr/reverse/?lon=${String(lon)}&lat=${String(lat)}`;
-	const brut = (await json(url)) as { features?: unknown } | null;
-	const premier = Array.isArray(brut?.features)
-		? (brut.features[0] as { properties?: Record<string, unknown> } | undefined)
-		: undefined;
+	const premier = featuresDe(await json(url))[0] as
+		{ properties?: Record<string, unknown> } | undefined;
 	const p = premier?.properties;
 	if (p === undefined) return null;
 	const id = texte(p.id).split('_').slice(0, 2).join('_');
@@ -389,10 +395,8 @@ export interface Voisine {
  */
 export async function voiesVoisines(lon: number, lat: number): Promise<Voisine[]> {
 	const url = `${INVERSE}/?lon=${String(lon)}&lat=${String(lat)}&limit=50`;
-	const brut = (await json(url)) as { features?: unknown } | null;
-	if (!Array.isArray(brut?.features)) return [];
 	const vues = new Map<string, Voisine>();
-	for (const f of brut.features as { properties?: Record<string, unknown> }[]) {
+	for (const f of featuresDe(await json(url)) as { properties?: Record<string, unknown> }[]) {
 		const p = f.properties;
 		if (p === undefined) continue;
 		const id = texte(p.id).split('_').slice(0, 2).join('_');
@@ -441,8 +445,7 @@ export async function chercher(saisie: string, limite = 7): Promise<Trouvaille[]
 	const q = saisie.trim();
 	if (q.length < 3) return [];
 	const url = `${GEOCODE}/?q=${encodeURIComponent(q)}&limit=${String(limite)}&autocomplete=1`;
-	const brut = (await json(url)) as { features?: unknown } | null;
-	const features = Array.isArray(brut?.features) ? (brut.features as TrouvailleBrute[]) : [];
+	const features = featuresDe(await json(url)) as TrouvailleBrute[];
 	return features
 		.map((f) => {
 			const point = pointDe(f.geometry);

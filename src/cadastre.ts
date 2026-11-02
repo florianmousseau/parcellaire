@@ -175,7 +175,9 @@ export async function parcelleParIdentifiant(idu: string): Promise<Parcelle | nu
 		numero: morceaux.numero
 	});
 	const reponse = await lire(`${API}/parcelle?${parametres.toString()}`, SEMAINE);
-	if (!reponse.ok) return null;
+	/* Une panne n'est pas une absence : un 429 ou un 503 leve, seul un 404 dit introuvable. */
+	if (reponse.status === 404) return null;
+	if (!reponse.ok) throw new Error(`API Carto cadastre : HTTP ${reponse.status}`);
 	const rendus = tableauDe(await reponse.json(), 'features', 'API Carto cadastre') as Trait[];
 	/*
 	 * LA BONNE SE CHERCHE, elle n'est jamais tenue pour la premiere. Sous une
