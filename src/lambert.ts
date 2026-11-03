@@ -152,9 +152,24 @@ export function dansLAnneau(p: PointL93, anneau: readonly PointL93[]): boolean {
 	return dedans;
 }
 
-/** Les points d'echantillonnage d'un segment, un tous les `pas` metres au plus. */
+/**
+ * Le plus de points qu'un segment rend : 150 km au pas de 1,5 m, qu'aucun cote
+ * de parcelle n'atteint. Au-dela, la geometrie est fausse et la boucle
+ * epuiserait la memoire au lieu de le dire.
+ */
+const ECHANTILLONS_MAX = 100_000;
+
+/**
+ * Les points d'echantillonnage d'un segment, un tous les `pas` metres au plus.
+ * Leve une `RangeError` sur un pas nul, negatif ou non fini (`pas = 0` bouclait
+ * sans fin), sur un sommet non fini et sur un segment demesure.
+ */
 export function echantillonner(a: PointL93, b: PointL93, pas = 1.5): PointL93[] {
+	if (!(Number.isFinite(pas) && pas > 0)) throw new RangeError(`pas invalide : ${String(pas)}`);
 	const n = Math.max(2, Math.ceil(distance(a, b) / pas));
+	if (!Number.isFinite(n) || n > ECHANTILLONS_MAX) {
+		throw new RangeError(`segment hors mesure : ${String(n)} echantillons`);
+	}
 	const pts: PointL93[] = [];
 	for (let i = 0; i <= n; i++) {
 		const t = i / n;
