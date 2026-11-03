@@ -117,8 +117,9 @@ export async function ligneParCommune(
 	const reponse = await lire(url, secondes).catch(() => null);
 	if (!reponse?.ok) return null;
 	const brut = await reponse.text();
-	const debut = brut.indexOf(`\n${insee};`);
+	// La premiere ligne n'a pas de saut devant elle : un fichier sans en-tete la commence.
+	const debut = `\n${brut}`.indexOf(`\n${insee};`);
 	if (debut === -1) return null;
-	const fin = brut.indexOf('\n', debut + 1);
-	return brut.slice(debut + 1, fin === -1 ? undefined : fin).split(';');
+	const fin = brut.indexOf('\n', debut);
+	return brut.slice(debut, fin === -1 ? undefined : fin).split(';');
 }

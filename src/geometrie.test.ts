@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { contient, distanceAuBord, type Contour } from './geometrie.ts';
+import { anneauxDe, contient, distanceAuBord, type Contour } from './geometrie.ts';
 
 /*
  * LE CAS QUI A OUVERT LE DEFAUT, le 2026-09-06.
@@ -93,4 +93,20 @@ test('la longitude est projetee : un ecart est-ouest compte moins qu un nord-sud
 	const versNord = distanceAuBord(carre(2.4, 48.801, 0.0001), 2.40005, 48.8);
 	/* Un degre de longitude vaut environ 73 m a Paris contre 111 m de latitude. */
 	assert.ok(versEst < versNord, `${versEst} m vers l est contre ${versNord} m vers le nord`);
+});
+
+test('un anneau dont un sommet est illisible est ecarte, il ne devient pas un triangle', () => {
+	const contour = anneauxDe({
+		type: 'Polygon',
+		coordinates: [
+			[
+				[2.4, 48.8],
+				[2.401, 48.8],
+				['2.401', 48.801],
+				[2.4, 48.801],
+				[2.4, 48.8]
+			]
+		]
+	});
+	assert.deepEqual(contour, []);
 });
