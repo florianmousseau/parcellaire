@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { lire, JOUR } from './reseau.ts';
+import { lire, ligneParCommune, JOUR } from './reseau.ts';
 
 /*
  * CE QUE CE BANC TIENT : qu'aucun appel sortant ne parte sans echeance.
@@ -47,4 +47,22 @@ test('un appel range au bord part avec une echeance ET son cache', async () => {
 test('un appel annonce qui il est', async () => {
 	const o = await optionsDe(() => lire('https://exemple.test/x', JOUR));
 	assert.match(o.headers?.['User-Agent'] ?? '', /^aucadastre\//u);
+});
+
+test('la premiere commune d un fichier sans en-tete se trouve', async () => {
+	const vrai = globalThis.fetch;
+	globalThis.fetch = (() => Promise.resolve(new Response('01001;B\n01002;A'))) as typeof fetch;
+	try {
+		assert.deepEqual(await ligneParCommune('https://exemple.test/z', '01001', JOUR), [
+			'01001',
+			'B'
+		]);
+		assert.deepEqual(await ligneParCommune('https://exemple.test/z', '01002', JOUR), [
+			'01002',
+			'A'
+		]);
+		assert.equal(await ligneParCommune('https://exemple.test/z', '1001', JOUR), null);
+	} finally {
+		globalThis.fetch = vrai;
+	}
 });

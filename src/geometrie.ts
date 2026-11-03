@@ -19,6 +19,13 @@ interface Geometrie {
 	coordinates?: unknown;
 }
 
+/*
+ * Un anneau dont un sommet est illisible est ECARTE ENTIER : en retirer le seul
+ * sommet ferait d'un carre un triangle, un autre terrain.
+ */
+const estUnSommet = (p: unknown): p is [number, number] =>
+	Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number';
+
 /**
  * Les anneaux d'une geometrie, `Polygon` ou `MultiPolygon`.
  *
@@ -33,12 +40,7 @@ export function anneauxDe(geometrie: Geometrie | null | undefined): Contour {
 	const plats = geometrie?.type === 'MultiPolygon' ? c.flat() : c;
 	return (plats as unknown[])
 		.filter((anneau): anneau is unknown[] => Array.isArray(anneau))
-		.map((anneau) =>
-			anneau.filter(
-				(p): p is [number, number] =>
-					Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number'
-			)
-		)
+		.filter((anneau): anneau is [number, number][] => anneau.every(estUnSommet))
 		.filter((anneau) => anneau.length >= 3);
 }
 
