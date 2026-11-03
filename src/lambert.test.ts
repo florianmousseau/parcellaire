@@ -147,6 +147,17 @@ test("l'echantillonnage garde les deux bouts et respecte son pas", () => {
 	}
 });
 
+// Audit Codex 2026-11-03 : `pas = 0` bouclait sans fin, un segment demesure epuisait la memoire.
+test("l'echantillonnage refuse un pas invalide, un sommet non fini et un segment demesure", () => {
+	for (const pas of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+		assert.throws(() => echantillonner([0, 0], [10, 0], pas), RangeError, String(pas));
+	}
+	assert.throws(() => echantillonner([0, 0], [Number.POSITIVE_INFINITY, 0]), RangeError);
+	assert.throws(() => echantillonner([0, 0], [Number.NaN, 0]), RangeError);
+	assert.throws(() => echantillonner([0, 0], [200_000, 0]), RangeError);
+	assert.equal(echantillonner([0, 0], [0, 0]).length, 3);
+});
+
 test('LE DOMAINE : la metropole et la Corse se mesurent, l outre-mer non', () => {
 	for (const point of [
 		[2.39, 48.79],
