@@ -36,7 +36,17 @@ export interface Batiment {
 	readonly logements?: number | null;
 	/** L'annee de construction (`date_d_apparition`), `null` quand elle manque. */
 	readonly annee?: number | null;
+	/** `etat_de_l_objet` : « En service », « En projet », « En construction ». Vide quand il manque. */
+	readonly etat?: string;
 }
+
+/*
+ * Un batiment en projet ou en construction n'est pas le bati existant : l'IGN
+ * dit que sa geometrie n'est pas significative, et ses etages et logements ne
+ * sont pas encore la. Il se dessine, il ne se designe pas.
+ */
+const PAS_ENCORE_BATI = new Set(['En projet', 'En construction']);
+const existe = (b: Batiment): boolean => !PAS_ENCORE_BATI.has(b.etat ?? '');
 
 /** Un objet du WFS tel qu'il arrive, avant lecture. */
 export interface Trait {
@@ -68,7 +78,8 @@ export function batimentDuTrait(t: Trait): Batiment | null {
 		nature: texte(t.properties?.nature),
 		centre: centreDe(contour) ?? { lon: 0, lat: 0 },
 		logements: nombre(t.properties?.nombre_de_logements),
-		annee: anneeDe(t.properties?.date_d_apparition)
+		annee: anneeDe(t.properties?.date_d_apparition),
+		etat: texte(t.properties?.etat_de_l_objet)
 	};
 }
 
@@ -105,11 +116,12 @@ export function batimentDuPoint(
 	lon: number,
 	lat: number
 ): Batiment | null {
-	const dedans = batiments.find((b) => contient(b.contour, lon, lat));
+	const existants = batiments.filter(existe);
+	const dedans = existants.find((b) => contient(b.contour, lon, lat));
 	if (dedans !== undefined) return dedans;
 	let plusProche: Batiment | null = null;
 	let plusCourt = Infinity;
-	for (const b of batiments) {
+	for (const b of existants) {
 		const metres = distanceAuBord(b.contour, lon, lat);
 		if (metres < plusCourt) {
 			plusCourt = metres;

@@ -32,7 +32,9 @@ const estUnSommet = (p: unknown): p is [number, number] =>
  * Les anneaux interieurs sont GARDES : une parcelle peut porter un trou, et le
  * dessiner plein la ferait deborder sur sa voisine. Un anneau de moins de trois
  * sommets est ecarte, parce qu'il ne dessine rien et fait un chemin SVG qui ne
- * ferme pas.
+ * ferme pas. Un anneau qui ne repete pas son premier sommet est REFERME : le
+ * dessin le ferme de lui-meme, et la surface et le perimetre oubliaient sinon
+ * son dernier cote.
  */
 export function anneauxDe(geometrie: Geometrie | null | undefined): Contour {
 	const c = geometrie?.coordinates;
@@ -41,8 +43,17 @@ export function anneauxDe(geometrie: Geometrie | null | undefined): Contour {
 	return (plats as unknown[])
 		.filter((anneau): anneau is unknown[] => Array.isArray(anneau))
 		.filter((anneau): anneau is [number, number][] => anneau.every(estUnSommet))
-		.filter((anneau) => anneau.length >= 3);
+		.filter((anneau) => anneau.length >= 3)
+		.map(referme);
 }
+
+const referme = (anneau: [number, number][]): [number, number][] => {
+	const [premier] = anneau;
+	const dernier = anneau[anneau.length - 1];
+	return premier![0] === dernier![0] && premier![1] === dernier![1]
+		? anneau
+		: [...anneau, premier!];
+};
 
 /** Un degre de latitude, en metres. La longitude se corrige par `kx`. */
 const METRES_PAR_DEGRE = 111_320;

@@ -15,8 +15,20 @@
 const UA = 'aucadastre/1.0 (+https://aucadastre.fr)';
 
 interface OptionsCloudflare extends RequestInit {
-	cf?: { cacheEverything: boolean; cacheTtl: number };
+	cf?: { cacheEverything: boolean; cacheTtlByStatus: Record<string, number> };
 }
+
+/*
+ * Un succes se garde la duree demandee ; une erreur ne se garde pas, et un 404
+ * cinq minutes : gardee une journee ou une semaine, une panne d'une heure de la
+ * source restait servie bien apres son retour.
+ */
+const parStatut = (secondes: number): Record<string, number> => ({
+	'200-299': secondes,
+	'404': 300,
+	'400-403': 0,
+	'405-599': 0
+});
 
 /** Une journee : le zonage, les risques, les adresses. */
 export const JOUR = 86_400;
@@ -44,7 +56,9 @@ const ECHEANCE = 10_000;
 const options = (secondes: number | null): OptionsCloudflare => ({
 	headers: { 'User-Agent': UA },
 	signal: AbortSignal.timeout(ECHEANCE),
-	...(secondes === null ? {} : { cf: { cacheEverything: true, cacheTtl: secondes } })
+	...(secondes === null
+		? {}
+		: { cf: { cacheEverything: true, cacheTtlByStatus: parStatut(secondes) } })
 });
 
 /** Un appel range au bord, et borne dans le temps. */
