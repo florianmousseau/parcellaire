@@ -101,3 +101,21 @@ test('une source de bati muette leve au lieu de rendre un quartier sans batiment
 		globalThis.fetch = avant;
 	}
 });
+
+test('un batiment en projet se dessine mais ne se designe pas', () => {
+	const carre: [number, number][] = [
+		[2.4, 48.8],
+		[2.4002, 48.8],
+		[2.4002, 48.8002],
+		[2.4, 48.8002],
+		[2.4, 48.8]
+	];
+	const enProjet = batimentDuTrait({
+		properties: { usage_1: 'Résidentiel', etat_de_l_objet: 'En projet', nombre_de_logements: 12 },
+		geometry: { type: 'Polygon', coordinates: [carre] }
+	})!;
+	assert.equal(enProjet.etat, 'En projet');
+	assert.equal(batimentDuPoint([enProjet], 2.4001, 48.8001), null);
+	const enService = { ...enProjet, etat: 'En service' };
+	assert.equal(batimentDuPoint([enProjet, enService], 2.4001, 48.8001), enService);
+});

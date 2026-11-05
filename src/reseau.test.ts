@@ -17,7 +17,10 @@ import { lire, ligneParCommune, JOUR } from './reseau.ts';
 
 interface Options {
 	readonly signal?: AbortSignal;
-	readonly cf?: { readonly cacheEverything: boolean; readonly cacheTtl: number };
+	readonly cf?: {
+		readonly cacheEverything: boolean;
+		readonly cacheTtlByStatus: Record<string, number>;
+	};
 	readonly headers?: Record<string, string>;
 }
 
@@ -41,7 +44,12 @@ test('un appel range au bord part avec une echeance ET son cache', async () => {
 	const o = await optionsDe(() => lire('https://exemple.test/x', JOUR));
 	assert.ok(o.signal instanceof AbortSignal, 'aucune echeance');
 	assert.equal(o.signal?.aborted, false);
-	assert.deepEqual(o.cf, { cacheEverything: true, cacheTtl: JOUR });
+	assert.equal(o.cf?.cacheEverything, true);
+	assert.equal(o.cf?.cacheTtlByStatus['200-299'], JOUR);
+	// Une erreur ne se garde pas, un 404 cinq minutes : la panne ne survit pas a la source.
+	assert.equal(o.cf?.cacheTtlByStatus['405-599'], 0);
+	assert.equal(o.cf?.cacheTtlByStatus['400-403'], 0);
+	assert.equal(o.cf?.cacheTtlByStatus['404'], 300);
 });
 
 test('un appel annonce qui il est', async () => {

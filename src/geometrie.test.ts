@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { anneauxDe, contient, distanceAuBord, type Contour } from './geometrie.ts';
+import { aire, enLambert93 } from './lambert.ts';
 
 /*
  * LE CAS QUI A OUVERT LE DEFAUT, le 2026-09-06.
@@ -109,4 +110,18 @@ test('un anneau dont un sommet est illisible est ecarte, il ne devient pas un tr
 		]
 	});
 	assert.deepEqual(contour, []);
+});
+
+test('un anneau qui ne repete pas son premier sommet est referme', () => {
+	// Sans le dernier cote, l'aire d'un rectangle de 82 m2 pres de Paris sortait a plus de 3 km2.
+	const ouvert = [
+		[2.4, 48.8],
+		[2.4001, 48.8],
+		[2.4001, 48.80008],
+		[2.4, 48.80008]
+	];
+	const [anneau] = anneauxDe({ type: 'Polygon', coordinates: [ouvert] });
+	assert.deepEqual(anneau![anneau!.length - 1], [2.4, 48.8]);
+	const m2 = aire(anneau!.map((p) => enLambert93(p)));
+	assert.ok(m2 > 50 && m2 < 120, `aire ${String(m2)}`);
 });
