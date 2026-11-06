@@ -22,8 +22,9 @@ test('le niveau par défaut est le plus SERRÉ qui contienne encore la parcelle'
 	assert.equal(NIVEAUX[niveauParDefaut(20)], 25);
 });
 
-test('une étendue plus large que le premier niveau retombe dessus', () => {
-	// Un tènement rural de 4 km ne se coupe pas : il s'ouvre au plus large.
+test('une étendue plus large que le premier niveau retombe dessus, et le cadre la coupe', () => {
+	// Un tènement rural de 4 km s'ouvre au plus large, qui n'en montre que 3,2 :
+	// au-delà, le plan cadastral n'est plus lisible.
 	assert.equal(niveauParDefaut(4000), 0);
 	assert.equal(NIVEAUX[niveauParDefaut(4000)], 1600);
 });

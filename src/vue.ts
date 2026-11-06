@@ -46,7 +46,9 @@ const borne = (n: number): number => Math.min(NIVEAUX.length - 1, Math.max(0, n)
  *
  * Le plus SERRE des niveaux qui la contient encore : la parcelle doit remplir
  * le cadre, pas s'y perdre. Une etendue plus large que le premier niveau
- * retombe dessus plutot que d'etre coupee.
+ * retombe dessus, et le cadre la COUPE : au-dela de 1 600 m de demi-largeur le
+ * plan cadastral cesse d'etre lisible, et un niveau de plus en tete decalerait
+ * le rang `z` de chaque adresse deja publiee.
  */
 export function niveauParDefaut(demiLargeurMetres: number): number {
 	const rang = NIVEAUX.findLastIndex((m) => m >= demiLargeurMetres);
