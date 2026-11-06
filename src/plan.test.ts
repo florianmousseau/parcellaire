@@ -143,3 +143,26 @@ test('un contour de deux cent mille sommets se dessine sans RangeError', () => {
 	const detaillee: Parcelle = { ...carre('94081000BQ0134', 2.39, 48.79, 0.001), contour: [anneau] };
 	assert.notEqual(dessiner([detaillee], '94081000BQ0134'), null);
 });
+
+test('le bati se cale sur les parcelles, et le cadre impose est rendu tel quel', () => {
+	const contour = [
+		[
+			[-0.5046, 47.4522],
+			[-0.5046, 47.4527],
+			[-0.5041, 47.4527],
+			[-0.5041, 47.4522],
+			[-0.5046, 47.4522]
+		] as [number, number][]
+	];
+	const cadre = { ouest: -0.5045, sud: 47.4523, est: -0.5042, nord: 47.4526 };
+	const dessin = dessiner(
+		[{ idu: '49353000AD0525', contour }],
+		'49353000AD0525',
+		[{ contour }],
+		cadre
+	);
+	assert.equal(dessin?.bati[0], dessin?.traces[0]?.d);
+	for (const cote of ['ouest', 'sud', 'est', 'nord'] as const) {
+		assert.ok(Math.abs((dessin?.cadre[cote] ?? 0) - cadre[cote]) < 1e-12, cote);
+	}
+});

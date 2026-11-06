@@ -278,3 +278,30 @@ test('une panne de la source leve, seul un 404 dit la parcelle introuvable', asy
 		globalThis.fetch = avant;
 	}
 });
+
+test('la parcelle demandee se prend par son identifiant entier, meme seconde, sous la commune mere', async () => {
+	const avant = globalThis.fetch;
+	const demandees: URL[] = [];
+	const trait = (idu: string, contenance: number) => ({
+		properties: { idu, contenance },
+		geometry: null
+	});
+	globalThis.fetch = (async (url: string | URL) => {
+		demandees.push(new URL(String(url)));
+		return Response.json({
+			features: [trait('132020000C0059', 111), trait('132010000C0059', 222)]
+		});
+	}) as typeof fetch;
+	try {
+		const trouvee = await parcelleParIdentifiant('132010000C0059');
+		assert.equal(trouvee?.idu, '132010000C0059');
+		assert.equal(trouvee?.contenance, 222);
+		const parametres = demandees[0]?.searchParams;
+		assert.equal(parametres?.get('code_insee'), '13055');
+		assert.equal(parametres?.get('section'), '0C');
+		assert.equal(parametres?.get('numero'), '0059');
+		assert.equal(await parcelleParIdentifiant('132030000C0059'), null);
+	} finally {
+		globalThis.fetch = avant;
+	}
+});

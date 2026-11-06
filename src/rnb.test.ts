@@ -113,3 +113,32 @@ test('UNE PANNE N EST PAS UNE ABSENCE : un referentiel muet leve, une adresse sa
 		}
 	);
 });
+
+test('un batiment construit rend son point et ses parts, demande avec la cle entiere et withPlots', async () => {
+	const avant = globalThis.fetch;
+	const demandees: URL[] = [];
+	globalThis.fetch = (async (url: string | URL) => {
+		demandees.push(new URL(String(url)));
+		return Response.json({
+			results: [
+				{ status: 'demolished', point: { coordinates: [1, 2] }, plots: [] },
+				{ status: 'constructed', point: { coordinates: [-0.5043, 47.4524] }, plots }
+			]
+		});
+	}) as typeof fetch;
+	try {
+		const batiment = await batimentDeLAdresse('94081_7125_00032_bis');
+		assert.equal(demandees[0]?.searchParams.get('cle_interop_ban'), '94081_7125_00032_bis');
+		assert.equal(demandees[0]?.searchParams.get('withPlots'), '1');
+		assert.deepEqual(batiment, {
+			lon: -0.5043,
+			lat: 47.4524,
+			parcelles: [
+				{ idu: '49353000AD0525', part: 0.8386 },
+				{ idu: '49353000AD0526', part: 0.1166 }
+			]
+		});
+	} finally {
+		globalThis.fetch = avant;
+	}
+});
