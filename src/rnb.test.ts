@@ -112,6 +112,12 @@ test('UNE PANNE N EST PAS UNE ABSENCE : un referentiel muet leve, une adresse sa
 			assert.equal(await batimentDeLAdresse('94081_7000_00012'), null);
 		}
 	);
+	await avecLaReponse(
+		() => Response.json({ results: [null] }),
+		async () => {
+			assert.equal(await batimentDeLAdresse('94081_7000_00012'), null);
+		}
+	);
 });
 
 test('un batiment construit rend son point et ses parts, demande avec la cle entiere et withPlots', async () => {

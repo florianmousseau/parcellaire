@@ -23,8 +23,10 @@ interface Geometrie {
  * Un anneau dont un sommet est illisible est ECARTE ENTIER : en retirer le seul
  * sommet ferait d'un carre un triangle, un autre terrain.
  */
+/* Fini, et pas seulement un nombre : `1e309` est un JSON valide qui se lit
+   Infinity, et un seul sommet infini met NaN dans tout le chemin SVG. */
 const estUnSommet = (p: unknown): p is [number, number] =>
-	Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number';
+	Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1]);
 
 /**
  * Les anneaux d'une geometrie, `Polygon` ou `MultiPolygon`.

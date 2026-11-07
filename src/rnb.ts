@@ -165,7 +165,7 @@ export async function batimentDeLAdresse(cleBan: string): Promise<BatimentDeLAdr
 		'RNB'
 	) as NonNullable<ReponseRnb['results']>;
 	for (const b of resultats) {
-		if (b.status !== CONSTRUIT) continue;
+		if (typeof b !== 'object' || b === null || b.status !== CONSTRUIT) continue;
 		const c = b.point?.coordinates;
 		if (!Array.isArray(c) || typeof c[0] !== 'number' || typeof c[1] !== 'number') continue;
 		return { lon: c[0], lat: c[1], parcelles: parcellesRetenues(b.plots) };

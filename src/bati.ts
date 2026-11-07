@@ -68,6 +68,7 @@ const anneeDe = (valeur: unknown): number | null => {
 
 /** Un batiment lu dans un objet du WFS, ou `null` sans contour. */
 export function batimentDuTrait(t: Trait): Batiment | null {
+	if (typeof t !== 'object' || t === null) return null;
 	const contour = anneauxDe(t.geometry);
 	if (contour.length === 0) return null;
 	return {

@@ -93,6 +93,12 @@ test('une source de bati muette leve au lieu de rendre un quartier sans batiment
 		await assert.rejects(batiAutour(2.39, 48.79), /HTTP 502/);
 		globalThis.fetch = (async () => Response.json({ features: [] })) as typeof fetch;
 		assert.deepEqual(await batiAutour(2.39, 48.79), []);
+		// Un element nul ou un sommet infini est ecarte, il ne fait pas tomber le quartier.
+		globalThis.fetch = (async () =>
+			new Response(
+				'{"features":[null,{"geometry":{"type":"Polygon","coordinates":[[[1e309,48],[2,48],[2,49]]]}}]}'
+			)) as typeof fetch;
+		assert.deepEqual(await batiAutour(2.39, 48.79), []);
 		// Un 200 sans `features` est une panne de contrat, pas un quartier vide.
 		globalThis.fetch = (async () =>
 			Response.json({ exception: 'InvalidParameterValue' })) as typeof fetch;
