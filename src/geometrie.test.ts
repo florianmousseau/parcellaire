@@ -112,6 +112,26 @@ test('un anneau dont un sommet est illisible est ecarte, il ne devient pas un tr
 	assert.deepEqual(contour, []);
 });
 
+test('un exterieur ecarte emporte ses trous : le trou ne devient pas le terrain', () => {
+	const trou = [
+		[2.4004, 48.8004],
+		[2.4006, 48.8004],
+		[2.4006, 48.8006],
+		[2.4004, 48.8006],
+		[2.4004, 48.8004]
+	];
+	const exterieur = [
+		[2.4, 48.8],
+		[2.401, 48.8],
+		['2.401', 48.801],
+		[2.4, 48.801],
+		[2.4, 48.8]
+	];
+	const contour = anneauxDe({ type: 'MultiPolygon', coordinates: [[exterieur, trou]] });
+	assert.deepEqual(contour, []);
+	assert.equal(contient(contour, 2.4005, 48.8005), false);
+});
+
 test('un anneau qui ne repete pas son premier sommet est referme', () => {
 	// Sans le dernier cote, l'aire d'un rectangle de 82 m2 pres de Paris sortait a plus de 3 km2.
 	const ouvert = [
