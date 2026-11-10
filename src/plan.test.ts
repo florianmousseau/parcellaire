@@ -166,3 +166,10 @@ test('le bati se cale sur les parcelles, et le cadre impose est rendu tel quel',
 		assert.ok(Math.abs((dessin?.cadre[cote] ?? 0) - cadre[cote]) < 1e-12, cote);
 	}
 });
+
+test('un terrain tres allonge garde un dessin d au moins un pixel de haut', () => {
+	const dessin = dessiner([lame('a', { ouest: 2, est: 2.02, sud: 48, nord: 48.000005 })], 'a');
+	assert.ok(dessin);
+	assert.equal(dessin.largeur, 640);
+	assert.equal(dessin.hauteur, 1);
+});

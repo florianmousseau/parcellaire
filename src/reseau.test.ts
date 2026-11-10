@@ -74,3 +74,19 @@ test('la premiere commune d un fichier sans en-tete se trouve', async () => {
 		globalThis.fetch = vrai;
 	}
 });
+
+test('une connexion coupee pendant le corps rend null, comme une panne avant les en-tetes', async () => {
+	const vrai = globalThis.fetch;
+	const coupe = new ReadableStream<Uint8Array>({
+		start(c) {
+			c.enqueue(new TextEncoder().encode('01001;B\n'));
+			c.error(new Error('connexion coupee'));
+		}
+	});
+	globalThis.fetch = (() => Promise.resolve(new Response(coupe))) as typeof fetch;
+	try {
+		assert.equal(await ligneParCommune('https://exemple.test/z', '01001', JOUR), null);
+	} finally {
+		globalThis.fetch = vrai;
+	}
+});
