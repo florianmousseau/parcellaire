@@ -41,13 +41,16 @@ const estUnSommet = (p: unknown): p is [number, number] =>
 export function anneauxDe(geometrie: Geometrie | null | undefined): Contour {
 	const c = geometrie?.coordinates;
 	if (!Array.isArray(c)) return [];
-	const plats = geometrie?.type === 'MultiPolygon' ? c.flat() : c;
-	return (plats as unknown[])
-		.filter((anneau): anneau is unknown[] => Array.isArray(anneau))
-		.filter((anneau): anneau is [number, number][] => anneau.every(estUnSommet))
-		.filter((anneau) => anneau.length >= 3)
-		.map(referme);
+	const polygones = (geometrie?.type === 'MultiPolygon' ? c : [c]) as unknown[];
+	return polygones.filter((p): p is unknown[] => Array.isArray(p)).flatMap(anneauxDuPolygone);
 }
+
+const estUnAnneau = (anneau: unknown): anneau is [number, number][] =>
+	Array.isArray(anneau) && anneau.length >= 3 && anneau.every(estUnSommet);
+
+/* Un exterieur rejete emporte ses trous : seuls, ils deviendraient le terrain. */
+const anneauxDuPolygone = ([exterieur, ...trous]: unknown[]): Contour =>
+	estUnAnneau(exterieur) ? [exterieur, ...trous.filter(estUnAnneau)].map(referme) : [];
 
 const referme = (anneau: [number, number][]): [number, number][] => {
 	const [premier] = anneau;
