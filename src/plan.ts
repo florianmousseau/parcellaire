@@ -150,8 +150,9 @@ export function dessiner(
 	const bati = batiments.map((b) => b.contour.map(chemin).join('')).filter((d) => d !== '');
 
 	return {
-		largeur: Math.round(etendueX * echelle),
-		hauteur: Math.round(etendueY * echelle),
+		// Un terrain tres allonge arrondirait son petit cote a zero : un viewBox sans hauteur.
+		largeur: Math.max(1, Math.round(etendueX * echelle)),
+		hauteur: Math.max(1, Math.round(etendueY * echelle)),
 		bati,
 		// La largeur en metres passe par la latitude, seule direction ou un degre
 		// a une longueur constante : le facteur de longitude est deja applique.

@@ -130,7 +130,9 @@ export async function ligneParCommune(
 ): Promise<string[] | null> {
 	const reponse = await lire(url, secondes).catch(() => null);
 	if (!reponse?.ok) return null;
-	const brut = await reponse.text();
+	// Une connexion coupee apres les en-tetes est la meme panne qu'avant eux.
+	const brut = await reponse.text().catch(() => null);
+	if (brut === null) return null;
 	// La premiere ligne n'a pas de saut devant elle : un fichier sans en-tete la commence.
 	const debut = `\n${brut}`.indexOf(`\n${insee};`);
 	if (debut === -1) return null;
