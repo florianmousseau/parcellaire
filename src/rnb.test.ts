@@ -46,6 +46,19 @@ test('une entree sans identifiant ou sans part ne passe pas', () => {
 	assert.deepEqual(parcellesRetenues([{ id: '49353000AD0525', bdg_cover_ratio: '0.9' }]), []);
 });
 
+test('une part au-dela de 1 ou infinie ne passe pas devant une part reelle', () => {
+	const gardees = parcellesRetenues([
+		{ id: '49353000AD0999', bdg_cover_ratio: Number.POSITIVE_INFINITY },
+		{ id: '49353000AD0998', bdg_cover_ratio: 1.5 },
+		{ id: '49353000AD0525', bdg_cover_ratio: 0.84 },
+		{ id: '49353000AD0526', bdg_cover_ratio: 1 }
+	]);
+	assert.deepEqual(
+		gardees.map((p) => p.idu),
+		['49353000AD0526', '49353000AD0525']
+	);
+});
+
 /*
  * LA CORSE A DES LETTRES DANS SON CODE INSEE. Le motif precedent demandait
  * cinq chiffres, donc `2a004_0970_00001` - le 1 cours Napoleon a Ajaccio -

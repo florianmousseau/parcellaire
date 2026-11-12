@@ -138,12 +138,13 @@ interface ReponseRnb {
  */
 export function parcellesRetenues(plots: unknown): ParcelleDuBatiment[] {
 	if (!Array.isArray(plots)) return [];
+	// Une part est une fraction : au-dela de 1, ou infinie, la reponse ment.
 	return (plots as PlotBrut[])
 		.map((p) => ({
 			idu: typeof p.id === 'string' ? p.id : '',
 			part: typeof p.bdg_cover_ratio === 'number' ? p.bdg_cover_ratio : 0
 		}))
-		.filter((p) => p.idu !== '' && p.part >= PART_MINIMALE)
+		.filter((p) => p.idu !== '' && p.part >= PART_MINIMALE && p.part <= 1)
 		.sort((a, b) => b.part - a.part);
 }
 
