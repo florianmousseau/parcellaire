@@ -6,6 +6,7 @@ import {
 	commune,
 	parcelleDeclaree,
 	parcellesDesAutresNumeros,
+	voie,
 	voiesVoisines,
 	type Numero
 } from './ban.ts';
@@ -142,6 +143,120 @@ test('un 404 de la recherche reste une recherche vide', async () => {
 	globalThis.fetch = (async () => new Response('', { status: 404 })) as typeof fetch;
 	try {
 		assert.deepEqual(await chercher('rue de la paix'), []);
+	} finally {
+		globalThis.fetch = avant;
+	}
+});
+
+// 2026-11-11 (audit Codex, angle 3) : aucune lecture reussie de `voie` ni de `chercher` n'etait tenue.
+test('une voie lue en entier : numeros tries, suffixe, parcelles et cadre', async () => {
+	const avant = globalThis.fetch;
+	globalThis.fetch = (async () =>
+		Response.json({
+			idVoie: '49007_1234',
+			nomVoie: 'Rue de la Mesure',
+			position: { coordinates: [-0.55, 47.47] },
+			displayBBox: [-0.56, 47.46, -0.54, 47.48],
+			commune: { code: '49007', nom: 'Angers', departement: { nom: 'Maine-et-Loire' } },
+			numeros: [
+				{
+					id: '49007_1234_00012_bis',
+					numero: 12,
+					suffixe: 'bis',
+					codePostal: '49000',
+					position: { coordinates: [-0.551, 47.471] },
+					parcelles: ['490070   DM0145', '490070000DM0146']
+				},
+				{
+					id: '49007_1234_00003',
+					numero: 3,
+					codePostal: '49000',
+					position: { coordinates: [-0.552, 47.472] },
+					parcelles: ['490070   DM0304']
+				}
+			]
+		})) as typeof fetch;
+	try {
+		assert.deepEqual(await voie('49007_1234'), {
+			id: '49007_1234',
+			nom: 'Rue de la Mesure',
+			point: { lon: -0.55, lat: 47.47 },
+			cadre: { ouest: -0.56, sud: 47.46, est: -0.54, nord: 47.48 },
+			commune: { insee: '49007', nom: 'Angers', departement: 'Maine-et-Loire' },
+			numeros: [
+				{
+					id: '49007_1234_00003',
+					numero: 3,
+					suffixe: '',
+					codePostal: '49000',
+					point: { lon: -0.552, lat: 47.472 },
+					parcelles: ['49007000DM0304']
+				},
+				{
+					id: '49007_1234_00012_bis',
+					numero: 12,
+					suffixe: 'bis',
+					codePostal: '49000',
+					point: { lon: -0.551, lat: 47.471 },
+					parcelles: ['49007000DM0145', '49007000DM0146']
+				}
+			]
+		});
+	} finally {
+		globalThis.fetch = avant;
+	}
+});
+
+test('une recherche reussie rend l adresse et la voie, et encode la saisie accentuee', async () => {
+	const avant = globalThis.fetch;
+	const demandees: string[] = [];
+	globalThis.fetch = (async (entree: RequestInfo | URL) => {
+		demandees.push(entree instanceof Request ? entree.url : String(entree));
+		return Response.json({
+			features: [
+				{
+					geometry: { coordinates: [-0.551, 47.471] },
+					properties: {
+						id: '49007_1234_00012',
+						label: '12 Rue de l Eperon 49000 Angers',
+						type: 'housenumber',
+						citycode: '49007',
+						city: 'Angers',
+						name: '12 Rue de l Eperon',
+						street: 'Rue de l Eperon',
+						housenumber: '12'
+					}
+				},
+				{
+					geometry: { coordinates: [-0.55, 47.47] },
+					properties: {
+						id: '49007_1234',
+						label: 'Rue de l Eperon 49000 Angers',
+						type: 'street',
+						citycode: '49007',
+						city: 'Angers',
+						name: 'Rue de l Eperon'
+					}
+				}
+			]
+		});
+	}) as typeof fetch;
+	try {
+		const [adresse, rue] = await chercher('rue de l éperon');
+		assert.ok(demandees[0]?.includes('q=rue%20de%20l%20%C3%A9peron'), String(demandees[0]));
+		assert.deepEqual(adresse, {
+			id: '49007_1234_00012',
+			libelle: '12 Rue de l Eperon 49000 Angers',
+			type: 'housenumber',
+			insee: '49007',
+			commune: 'Angers',
+			voie: 'Rue de l Eperon',
+			numero: '12',
+			point: { lon: -0.551, lat: 47.471 }
+		});
+		assert.equal(rue?.id, '49007_1234');
+		assert.equal(rue?.voie, 'Rue de l Eperon');
+		assert.equal(rue?.numero, '');
 	} finally {
 		globalThis.fetch = avant;
 	}

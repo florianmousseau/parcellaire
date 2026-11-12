@@ -286,3 +286,24 @@ test('une allee plus proche ne masque pas la chaussee qui borde la limite', () =
 	assert.equal(sud.nature, 'sur-voie');
 	assert.equal(sud.voie, 'avenue large');
 });
+
+// 2026-11-11 (audit Codex, angle 3) : seul le sens trigonometrique etait parcouru.
+test('le meme rectangle parcouru dans l autre sens rend les memes cotes, cote par cote', () => {
+	const parDirection = (cotes: readonly Cote[]) =>
+		Object.fromEntries(
+			cotes.map((c) => [
+				`${String(Math.round(c.dehors[0]))},${String(Math.round(c.dehors[1]))}`,
+				{
+					longueur: Math.round(c.longueur * 100) / 100,
+					nature: c.nature,
+					aLAxe: c.aLAxe === null ? null : Math.round(c.aLAxe * 100) / 100
+				}
+			])
+		);
+	const direct = parDirection(cotesDeLaParcelle(PARCELLE, [RUE], [VOISINE]));
+	const inverse = parDirection(cotesDeLaParcelle([...PARCELLE].reverse(), [RUE], [VOISINE]));
+	assert.deepEqual(inverse, direct);
+	assert.equal(direct['0,-1']?.nature, 'sur-voie');
+	assert.equal(direct['0,1']?.nature, 'separative');
+	assert.equal(Object.keys(direct).length, 4);
+});
