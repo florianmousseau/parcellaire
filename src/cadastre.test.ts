@@ -72,6 +72,30 @@ test('une adresse rend TOUTES les parcelles que son batiment couvre', () => {
 	assert.equal(r?.autres[0]?.declaree, true);
 });
 
+// 2026-11-13 (audit Codex) : un point pose sur une voie privee cadastree.
+test('le point cede a la parcelle que la BAN declare ET que le batiment couvre', () => {
+	const voie = parcelle('49353000AD0900', 640);
+	const maison = { ...BATIMENT, parcelles: [{ idu: '49353000AD0525', part: 1 }] };
+	const r = rattacherLaParcelle(voie, [...AUTOUR, voie], -0.5049, 47.4524, maison, [
+		'49353000AD0525'
+	]);
+	assert.equal(r?.parcelle.idu, '49353000AD0525');
+	assert.equal(r?.par, 'batiment');
+	assert.equal(r?.part, 1);
+	// Sans declaration, ou quand la BAN declare aussi la parcelle du point, le point reste.
+	assert.equal(
+		rattacherLaParcelle(voie, [...AUTOUR, voie], -0.5049, 47.4524, maison, [])?.par,
+		'point'
+	);
+	assert.equal(
+		rattacherLaParcelle(voie, [...AUTOUR, voie], -0.5049, 47.4524, maison, [
+			'49353000AD0525',
+			'49353000AD0900'
+		])?.parcelle.idu,
+		'49353000AD0900'
+	);
+});
+
 test('la plus couverte passe en tete, quel que soit l ordre recu', () => {
 	const inverse = { ...BATIMENT, parcelles: [...BATIMENT.parcelles].reverse() };
 	const r = rattacherLaParcelle(null, AUTOUR, -0.5049, 47.4524, inverse, []);

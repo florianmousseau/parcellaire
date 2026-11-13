@@ -460,6 +460,26 @@ export function rattacherLaParcelle(
 		);
 	const partDe = (p: Parcelle): number | null => parts.get(p.idu) ?? null;
 
+	/*
+	 * LE POINT CEDE QUAND LA BAN ET LE BATIMENT DESIGNENT ENSEMBLE UNE AUTRE
+	 * PARCELLE. Un point d'entree pose sur une voie privee cadastree tombe dans
+	 * la voie : elle remontait comme terrain principal, avec sa contenance, et la
+	 * maison declaree et couverte passait secondaire (audit Codex du 2026-11-13).
+	 * Le point ne cede qu'a cette concordance, et jamais a une parcelle que la
+	 * BAN declare AUSSI au point.
+	 */
+	const concordante =
+		auPoint === null || declarees.includes(auPoint.idu)
+			? undefined
+			: portees.find((p) => p.declaree && p.part !== null && p.parcelle.idu !== auPoint.idu);
+	if (concordante !== undefined) {
+		return {
+			parcelle: concordante.parcelle,
+			par: 'batiment',
+			autres: autres(concordante.parcelle),
+			part: concordante.part
+		};
+	}
 	if (auPoint !== null) {
 		return { parcelle: auPoint, par: 'point', autres: autres(auPoint), part: partDe(auPoint) };
 	}
