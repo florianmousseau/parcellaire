@@ -108,14 +108,19 @@ export function dessiner(
 	 */
 	cadreImpose?: Cadre
 ): Dessin | null {
-	if (parcelles.length === 0) return null;
+	/* Un cadre impose se dessine meme sans parcelle : la ou le lecteur s'est
+	 * deplace hors du cadastre, la photo, la carte et le bati restent. */
+	if (parcelles.length === 0 && cadreImpose === undefined) return null;
 	/* Une chaine vide ne vise rien : c'est ce que passe la page d'une voie. */
 	const visees = new Set(
 		(typeof cibles === 'string' ? [cibles] : cibles).filter((idu) => idu !== '')
 	);
 	const latitudes = parcelles.flatMap((p) => p.contour.flatMap((a) => a.map(([, lat]) => lat)));
-	if (latitudes.length === 0) return null;
-	const latMoyenne = latitudes.reduce((s, v) => s + v, 0) / latitudes.length;
+	if (latitudes.length === 0 && cadreImpose === undefined) return null;
+	const latMoyenne =
+		latitudes.length === 0 && cadreImpose !== undefined
+			? (cadreImpose.sud + cadreImpose.nord) / 2
+			: latitudes.reduce((s, v) => s + v, 0) / latitudes.length;
 	const kx = Math.cos((latMoyenne * Math.PI) / 180);
 
 	const xs = parcelles.flatMap((p) => p.contour.flatMap((a) => a.map(([lon]) => lon * kx)));

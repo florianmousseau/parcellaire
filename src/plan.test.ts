@@ -41,6 +41,18 @@ test('sans parcelle, aucun dessin plutot qu un cadre vide', () => {
 	assert.equal(dessiner([], 'x'), null);
 });
 
+// Audit Codex du 2026-11-14, angle 2 : hors du cadastre, le cadre choisi reste.
+test('un cadre impose se dessine sans parcelle, avec le bati seul', () => {
+	const cadre: Cadre = { ouest: 2.38, sud: 48.78, est: 2.382, nord: 48.781 };
+	const batiment = carre('b', 2.3805, 48.7803, 0.0002);
+	const dessin = dessiner([], '', [batiment], cadre);
+	assert.ok(dessin);
+	assert.deepEqual(dessin.traces, []);
+	assert.equal(dessin.bati.length, 1);
+	assert.deepEqual(dessin.cadre, cadre);
+	assert.ok(dessin.largeurMetres > 0);
+});
+
 test('la cible passe au premier plan', () => {
 	const dessin = dessiner(
 		[carre('a', 2.38, 48.78, 0.001), carre('cible', 2.381, 48.781, 0.001)],
