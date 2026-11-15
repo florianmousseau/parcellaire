@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
 	decouperIdentifiant,
+	feuilleAuPoint,
 	parcelleAuPoint,
 	rattacherLaParcelle,
 	sectionLisible,
@@ -328,4 +329,60 @@ test('la parcelle demandee se prend par son identifiant entier, meme seconde, so
 	} finally {
 		globalThis.fetch = avant;
 	}
+});
+
+/* Audit Codex du 2026-11-14 (angle 3), constats 1 et 3 : le point envoye et ce qui en est lu. */
+async function avecReponse<T>(
+	corps: unknown,
+	agir: () => Promise<T>
+): Promise<{ rendu: T; url: URL }> {
+	const avant = globalThis.fetch;
+	const demandees: URL[] = [];
+	globalThis.fetch = (async (url: string | URL) => {
+		demandees.push(new URL(String(url)));
+		return Response.json(corps);
+	}) as typeof fetch;
+	try {
+		const rendu = await agir();
+		const url = demandees[0];
+		assert.ok(url);
+		return { rendu, url };
+	} finally {
+		globalThis.fetch = avant;
+	}
+}
+
+test('la parcelle au point envoie le point lui-meme et decode identifiant et contour', async () => {
+	const anneau = [
+		[2.4, 48.8],
+		[2.401, 48.8],
+		[2.401, 48.801],
+		[2.4, 48.8]
+	];
+	const { rendu, url } = await avecReponse(
+		{
+			features: [
+				{
+					properties: { idu: '94081000AB0012', section: 'AB', numero: '0012', contenance: 412 },
+					geometry: { type: 'Polygon', coordinates: [anneau] }
+				}
+			]
+		},
+		() => parcelleAuPoint(2.4, 48.8)
+	);
+	assert.match(url.pathname, /\/parcelle$/);
+	assert.equal(url.searchParams.get('geom'), '{"type":"Point","coordinates":[2.4,48.8]}');
+	assert.equal(rendu?.idu, '94081000AB0012');
+	assert.equal(rendu?.insee, '94081');
+	assert.deepEqual(rendu?.contour, [anneau]);
+});
+
+test('la feuille au point lit la division, et rend ses quatre champs sans repli', async () => {
+	const { rendu, url } = await avecReponse(
+		{ features: [{ properties: { section: 'AB', feuille: 3, echelle: '1000', edition: 7 } }] },
+		() => feuilleAuPoint(2.4, 48.8)
+	);
+	assert.match(url.pathname, /\/division$/);
+	assert.equal(url.searchParams.get('geom'), '{"type":"Point","coordinates":[2.4,48.8]}');
+	assert.deepEqual(rendu, { section: 'AB', feuille: 3, echelle: '1000', edition: 7 });
 });
