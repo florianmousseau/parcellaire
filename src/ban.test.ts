@@ -261,3 +261,66 @@ test('une recherche reussie rend l adresse et la voie, et encode la saisie accen
 		globalThis.fetch = avant;
 	}
 });
+
+/* Audit Codex du 2026-11-14 (angle 3), constats 2 et 4 : du point a la voie. */
+async function avecAdresses<T>(
+	features: unknown[],
+	agir: () => Promise<T>
+): Promise<{ rendu: T; url: URL }> {
+	const avant = globalThis.fetch;
+	const demandees: URL[] = [];
+	globalThis.fetch = (async (url: string | URL) => {
+		demandees.push(new URL(String(url)));
+		return Response.json({ features });
+	}) as typeof fetch;
+	try {
+		const rendu = await agir();
+		const url = demandees[0];
+		assert.ok(url);
+		return { rendu, url };
+	} finally {
+		globalThis.fetch = avant;
+	}
+}
+
+test('la voie au point se tire de l adresse la plus proche, nommee par son arrondissement', async () => {
+	const { rendu, url } = await avecAdresses(
+		[
+			{
+				properties: {
+					id: '75102_1234_00029',
+					street: 'Rue de la Paix',
+					citycode: '75102',
+					city: 'Paris'
+				}
+			}
+		],
+		() => chercherVoieAuPoint(2.33, 48.87)
+	);
+	assert.equal(url.searchParams.get('lon'), '2.33');
+	assert.equal(url.searchParams.get('lat'), '48.87');
+	assert.deepEqual(rendu, {
+		id: '75102_1234',
+		nom: 'Rue de la Paix',
+		insee: '75102',
+		commune: 'Paris 2e Arrondissement'
+	});
+});
+
+test('les voies voisines sont uniques et rangees par distance arrondie', async () => {
+	const adresse = (id: string, street: string, distance: number) => ({
+		properties: { id, street, distance }
+	});
+	const { rendu } = await avecAdresses(
+		[
+			adresse('94081_0002_00010', 'Rue B', 48.6),
+			adresse('94081_0001_00003', 'Rue A', 12.4),
+			adresse('94081_0002_00012', 'Rue B', 30.2)
+		],
+		() => voiesVoisines(2.39, 48.79)
+	);
+	assert.deepEqual(rendu, [
+		{ id: '94081_0001', nom: 'Rue A', metres: 12 },
+		{ id: '94081_0002', nom: 'Rue B', metres: 49 }
+	]);
+});
