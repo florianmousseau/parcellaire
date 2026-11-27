@@ -90,7 +90,7 @@ const bornes = (valeurs: readonly number[]): [number, number] => {
  * blanc que le lecteur prend pour une panne d'affichage.
  *
  * PLUSIEURS CIBLES, PARCE QU'UNE ADRESSE EN COUVRE SOUVENT DEUX (2026-09-07) :
- * une maison de Trelaze est sur AD 525 et AD 526. Surligner la
+ * la Monnaie de Paris, 11 quai de Conti, est sur AB 52 et AB 49. Surligner la
  * seule parcelle principale montrait la moitie du terrain sans le dire.
  */
 export function dessiner(

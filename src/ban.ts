@@ -37,8 +37,8 @@ export interface Numero {
 	 *
 	 * C'est une DECLARATION, pas une mesure : quand elle existe, elle vaut plus
 	 * que la geometrie, et `rattacherLaParcelle` la garde meme sous le seuil de
-	 * couverture du batiment. Pour une maison de Trelaze, elle nomme
-	 * AD 526 quand le batiment est surtout sur AD 525 : les deux ensemble sont
+	 * couverture du batiment. A la Monnaie de Paris, 11 quai de Conti, elle nomme
+	 * AB 49 quand le batiment est surtout sur AB 52 : les deux ensemble sont
 	 * la reponse, et c'est ce que le cadastre sait.
 	 */
 	readonly parcelles: readonly string[];
@@ -119,7 +119,7 @@ interface NumeroBrut {
 /**
  * L'identifiant cadastral d'une parcelle declaree par la BAN.
  *
- * Elle l'ecrit dans la forme des fichiers fonciers - `490353   AD0526` : code
+ * Elle l'ecrit dans la forme des fichiers fonciers - `750106   AB0049` : code
  * departement, code direction, code commune, prefixe de section, section,
  * numero. Reconstruire le code INSEE depuis les six premiers signes DEMANDE de
  * savoir ou couper le departement, et la coupe n'est pas la meme en metropole

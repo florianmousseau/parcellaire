@@ -68,8 +68,8 @@ const entier = (valeur: unknown): number | null =>
  * et rebranches dans la foulee. La boucle vaut d'etre ecrite, parce que c'est
  * le raisonnement qui etait faux, pas le code.
  *
- * Le soir, sur la page d'une adresse de Trelaze,
- * la page ne servait plus qu'AD 525 : la deuxieme parcelle du numero avait
+ * Le soir, sur la page d'une adresse,
+ * la page ne servait plus que la principale : la deuxieme parcelle du numero avait
  * disparu. J'ai retire `cf` dans `node_modules`, reconstruit, et les deux
  * parcelles sont revenues. Conclusion tiree : le cache d'arete change ce que
  * la source repond. Reverte, commentaire ecrit ici meme, et c'etait FAUX.
@@ -77,12 +77,12 @@ const entier = (valeur: unknown): number | null =>
  * J'avais change DEUX choses et lu comme si une seule avait bouge : l'option
  * `cf`, et le dossier `--persist-to` du serveur local. Remesure derriere :
  *
- *   pin incrimine, etat local NEUF        -> AD 525 et AD 526
- *   pin incrimine, ANCIEN etat local      -> AD 525 et AD 526
- *   les deux, sur le 12 de la meme rue    -> AD 515 et AD 514
+ *   pin incrimine, etat local NEUF        -> les deux parcelles
+ *   pin incrimine, ANCIEN etat local      -> les deux parcelles
+ *   les deux, sur un numero voisin        -> ses deux parcelles
  *   apicarto appele deux fois avec `cf` et deux fois sans, meme requete
- *     -> meme statut, memes 55 709 octets, memes 80 parcelles, AD 525,
- *        AD 526 et AD 984 dans les quatre. Le cache marche : 106 ms au
+ *     -> meme statut, memes 55 709 octets, memes 80 parcelles, les trois
+ *        du batiment dans les quatre. Le cache marche : 106 ms au
  *        deuxieme appel contre 299 au premier.
  *
  * La panne du soir ne s'est jamais reproduite. Reste une reponse partielle
@@ -348,11 +348,12 @@ const parIdentifiant = (parcelles: readonly Parcelle[], idu: string): Parcelle |
  * l'appellent.
  *
  * UNE ADRESSE EN COUVRE SOUVENT DEUX, et la page n'en servait qu'une jusqu'au
- * 2026-09-07, quand une maison de Trelaze en couvre deux, AD 525 et AD 526.
+ * 2026-09-07. A la Monnaie de Paris, 11 quai de Conti, le batiment en couvre
+ * deux, AB 52 et AB 49 (releve du 2026-11-27).
  * Le cadastre le sait par deux chemins, et il fallait les deux : le referentiel des batiments mesure la part
- * du batiment posee sur chaque parcelle (AD 525 83,9 %, AD 526 11,7 %, AD 984
- * 4,5 % - la troisieme est un debord, `PART_MINIMALE` la coupe), et la Base
- * Adresse Nationale DECLARE AD 526 pour ce numero. La reponse est leur union.
+ * du batiment posee sur chaque parcelle (AB 52 73,9 %, AB 49 24,2 %, AB 5
+ * 0,14 % - la troisieme est un debord, `PART_MINIMALE` la coupe), et la Base
+ * Adresse Nationale DECLARE AB 49 pour ce numero. La reponse est leur union.
  *
  * Quatre etages pour la principale, du plus sur au plus faible :
  *
@@ -394,9 +395,9 @@ const parIdentifiant = (parcelles: readonly Parcelle[], idu: string): Parcelle |
  * Letanduere, 48 des 54.
  *
  * LA REGLE NE TOUCHE JAMAIS LA PRINCIPALE, et elle exempte ce que la BAN
- * declare AUSSI pour ce numero. C'est ce qui garde le cas fondateur : a
- * Trelaze, AD 526 est declaree au 22, elle reste. Au 12 de la meme rue,
- * AD 0516 a 11 % est declaree au 14 : elle part. A Renaze, le 3 perd AD 146,
+ * declare AUSSI pour ce numero. C'est ce qui garde le cas temoin : a
+ * la Monnaie de Paris, AB 49 est declaree au 11, elle reste. Une secondaire a
+ * 11 % que la BAN declare au numero d'a cote, elle, part. A Renaze, le 3 perd AD 146,
  * qui est la parcelle du 1b - celle-la meme que ce depot avait deja nommee de
  * travers le 2026-09-06.
  *

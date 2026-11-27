@@ -13,7 +13,7 @@ import {
 
 /*
  * LA BAN ECRIT SES PARCELLES DANS LA FORME DES FICHIERS FONCIERS -
- * « 490353   AD0526 » : code departement, code direction, code commune,
+ * « 750106   AB0049 » : code departement, code direction, code commune,
  * prefixe de section, section, numero. Reconstruire le code INSEE depuis la
  * tete demande de savoir ou couper le departement, et la coupe n'est pas la
  * meme en metropole et outre-mer : c'est l'erreur que le premier releve du
@@ -23,7 +23,9 @@ import {
  */
 
 test('la queue porte le prefixe, la section et le numero', () => {
-	assert.equal(parcelleDeclaree('490353   AD0526', '49353'), '49353000AD0526');
+	assert.equal(parcelleDeclaree('750106   AB0049', '75106'), '75106000AB0049');
+	// Paris l'ecrit deja en quatorze signes (11 quai de Conti, releve du 2026-11-27).
+	assert.equal(parcelleDeclaree('75106000AB0049', '75106'), '75106000AB0049');
 	assert.equal(parcelleDeclaree('940810   AB0123', '94081'), '94081000AB0123');
 });
 
@@ -32,17 +34,17 @@ test('un prefixe de commune fusionnee est garde tel quel', () => {
 });
 
 test('une reference d une autre commune ne se rattache pas a la page', () => {
-	assert.equal(parcelleDeclaree('940810   AB0123', '49353'), null);
-	assert.equal(parcelleDeclaree('490354   AD0526', '49353'), null);
+	assert.equal(parcelleDeclaree('940810   AB0123', '75106'), null);
+	assert.equal(parcelleDeclaree('750107   AB0049', '75106'), null);
 });
 
 test('une forme qui n est pas une reference ne rend rien', () => {
-	assert.equal(parcelleDeclaree('', '49353'), null);
-	assert.equal(parcelleDeclaree('AD0526', '49353'), null);
-	assert.equal(parcelleDeclaree(42, '49353'), null);
-	assert.equal(parcelleDeclaree('490353   AD05', '49353'), null);
+	assert.equal(parcelleDeclaree('', '75106'), null);
+	assert.equal(parcelleDeclaree('AB0049', '75106'), null);
+	assert.equal(parcelleDeclaree(42, '75106'), null);
+	assert.equal(parcelleDeclaree('750106   AB00', '75106'), null);
 	// Sans commune, on ne fabrique pas d'identifiant.
-	assert.equal(parcelleDeclaree('490353   AD0526', ''), null);
+	assert.equal(parcelleDeclaree('750106   AB0049', ''), null);
 });
 
 /*

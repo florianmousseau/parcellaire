@@ -159,17 +159,17 @@ test('un contour de deux cent mille sommets se dessine sans RangeError', () => {
 test('le bati se cale sur les parcelles, et le cadre impose est rendu tel quel', () => {
 	const contour = [
 		[
-			[-0.5046, 47.4522],
-			[-0.5046, 47.4527],
-			[-0.5041, 47.4527],
-			[-0.5041, 47.4522],
-			[-0.5046, 47.4522]
+			[2.3395, 48.8565],
+			[2.3395, 48.857],
+			[2.34, 48.857],
+			[2.34, 48.8565],
+			[2.3395, 48.8565]
 		] as [number, number][]
 	];
-	const cadre = { ouest: -0.5045, sud: 47.4523, est: -0.5042, nord: 47.4526 };
+	const cadre = { ouest: 2.3396, sud: 48.8566, est: 2.3399, nord: 48.8569 };
 	const dessin = dessiner(
-		[{ idu: '49353000AD0525', contour }],
-		'49353000AD0525',
+		[{ idu: '75106000AB0052', contour }],
+		'75106000AB0052',
 		[{ contour }],
 		cadre
 	);
