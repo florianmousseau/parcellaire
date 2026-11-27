@@ -6,7 +6,7 @@ import { batimentDeLAdresse, CLE_BAN, parcellesRetenues, PART_MINIMALE } from '.
  * LE SEUIL EST DERIVE, PAS CHOISI : releve du 2026-09-07 sur 72 adresses de six
  * communes, 140 couples batiment-parcelle. La distribution a deux bosses - 57
  * parcelles sous 0,8 % et 72 au-dessus de 5 %, onze entre les deux. Le cas
- * temoin est le 22 rue Emile Chaillou a Trelaze : AD 525 83,9 %, AD 526 11,7 %,
+ * temoin est une maison de Trelaze : AD 525 83,9 %, AD 526 11,7 %,
  * AD 984 4,5 %.
  */
 

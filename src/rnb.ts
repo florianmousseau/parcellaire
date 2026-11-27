@@ -30,10 +30,9 @@
  * IL REND AUSSI LES PARCELLES DU BATIMENT, ET LA PART POSEE SUR CHACUNE
  * ============================================================================
  *
- * Florian, le 2026-09-07 : *« le 22 rue Emile Chaillou a Trelaze a deux
- * parcelles, 525 et 526. Ma femme m'a dit que le cadastre le sait »*. La page
- * n'en servait qu'une - AD 525 - parce qu'elle demandait au cadastre quelle
- * parcelle CONTIENT le point representatif du batiment. Un point ne tombe que
+ * Le 2026-09-07, une maison de Trelaze couvre deux parcelles, AD 525 et
+ * AD 526, et le cadastre le sait. La page n'en servait qu'une - AD 525 -
+ * parce qu'elle demandait au cadastre quelle parcelle CONTIENT le point representatif du batiment. Un point ne tombe que
  * dans une parcelle ; une maison, elle, s'etale.
  *
  * `?withPlots=1` rend `plots`, et chaque entree porte `bdg_cover_ratio` : la
@@ -90,7 +89,7 @@ export const CLE_BAN = /^\d[\dAB]\d{3}_[0-9a-z]+_\d+/i;
  * pese des dizaines de pour cent.
  *
  * CINQ POUR CENT, ET PAS DIX : le cas qui a ouvert le chantier tient a 11,7 %
- * (AD 526 au 22 rue Emile Chaillou), donc les deux seuils le gardent - mais un
+ * (AD 526 a Trelaze), donc les deux seuils le gardent - mais un
  * seuil haut ecarte en SILENCE, alors qu'une parcelle de trop se voit : la page
  * ecrit la part a cote de chaque reference, et le lecteur juge. Une parcelle
  * absente, elle, ne se discute pas.

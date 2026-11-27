@@ -90,7 +90,7 @@ const bornes = (valeurs: readonly number[]): [number, number] => {
  * blanc que le lecteur prend pour une panne d'affichage.
  *
  * PLUSIEURS CIBLES, PARCE QU'UNE ADRESSE EN COUVRE SOUVENT DEUX (2026-09-07) :
- * le 22 rue Emile Chaillou a Trelaze est sur AD 525 et AD 526. Surligner la
+ * une maison de Trelaze est sur AD 525 et AD 526. Surligner la
  * seule parcelle principale montrait la moitie du terrain sans le dire.
  */
 export function dessiner(

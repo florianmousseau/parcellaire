@@ -1,85 +1,68 @@
 # parcellaire
 
-Les données publiques d'une parcelle française, et le calcul de son plan.
+Public data about a French land parcel, and the drawing of its cadastral plan.
 
-Douze modules sans dépendance, écrits en TypeScript, qui lisent les sources
-ouvertes de l'État et calculent ce qu'il faut pour en faire une page : la Base
-Adresse Nationale, le cadastre de l'IGN, le Référentiel National des Bâtiments,
-les fonds de la DGFiP et de l'IGN.
+Fifteen TypeScript modules with no runtime dependency. They read the open data
+published by the French State: the Base Adresse Nationale (addresses), the IGN
+cadastre (parcels), the Référentiel National des Bâtiments (buildings) and the
+DGFiP and IGN map layers.
 
-Extraits de [aucadastre.fr](https://aucadastre.fr) et
-[edifiable.fr](https://edifiable.fr), qui les servent en production.
+## Modules
 
-## Ce que le paquet contient
+| Module                        | What it does                                                         |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `parcellaire/ban`             | Base Adresse Nationale: streets, municipalities, address search      |
+| `parcellaire/cadastre`        | IGN parcels, and which parcels an address sits on                    |
+| `parcellaire/bati`            | BD TOPO buildings: footprint, height, floors, dwellings, year built  |
+| `parcellaire/rnb`             | The building of an address, and its share on each parcel             |
+| `parcellaire/plan`            | A cadastral plan drawn as SVG, computed on the server                |
+| `parcellaire/cotes`           | The length of each parcel boundary, and its kind                     |
+| `parcellaire/vue`             | Zoom and pan of a plan, carried in the URL                           |
+| `parcellaire/geometrie`       | Rings, point in polygon, distance to an edge                         |
+| `parcellaire/lambert`         | WGS 84 to Lambert-93, distances and areas in metres                  |
+| `parcellaire/reseau`          | A `fetch` with a cache and a timeout                                 |
+| `parcellaire/arrondissements` | Paris, Lyon and Marseille: the code to query, the name to display    |
+| `parcellaire/casse`           | Casing of French proper names                                        |
+| `parcellaire/francais`        | French articles: « de Nantes », « du Mans », « de la Mayenne »       |
+| `parcellaire/fonds`           | Base maps: cadastre, aerial photo, IGN plan, and their WMS addresses |
+| `parcellaire/cadastre-gouv`   | Search on the cadastre.gouv.fr service                               |
 
-| Module                        | Ce qu'il fait                                                          |
-| ----------------------------- | ---------------------------------------------------------------------- |
-| `parcellaire/ban`             | La Base Adresse Nationale : une voie, une commune, la recherche        |
-| `parcellaire/cadastre`        | Les parcelles de l'IGN, et laquelle porte une adresse                  |
-| `parcellaire/bati`            | Les bâtiments de la BD TOPO : forme, hauteur, étages, logements, année |
-| `parcellaire/rnb`             | Le bâtiment d’une adresse, et la part posée sur chaque parcelle        |
-| `parcellaire/plan`            | Le tracé d'un plan cadastral, en SVG, calculé sur le serveur           |
-| `parcellaire/cotes`           | La longueur de chaque limite d'une parcelle, et sa nature              |
-| `parcellaire/vue`             | Le zoom et le déplacement d'un plan, par l'adresse                     |
-| `parcellaire/geometrie`       | Anneaux, appartenance d'un point, distance à un bord                   |
-| `parcellaire/lambert`         | WGS 84 vers Lambert-93, distances et aires en mètres                   |
-| `parcellaire/reseau`          | Un `fetch` qui met en cache et qui abandonne au bout du temps imparti  |
-| `parcellaire/arrondissements` | Paris, Lyon et Marseille : le code a interroger, le nom a afficher     |
-| `parcellaire/casse`           | La casse d'un nom propre français                                      |
-| `parcellaire/francais`        | Les articles : « de Nantes », « du Mans », « de la Mayenne »           |
-| `parcellaire/fonds`           | Les fonds de carte : cadastre, photo, plan IGN, et leur adresse WMS    |
-| `parcellaire/cadastre-gouv`   | La recherche du service cadastre.gouv.fr                               |
+The package ships no component, no style, no route and no data. It only calls
+public APIs with `fetch`, and works on any runtime that has it.
 
-### Ce qui n'a pas encore pu partir
-
-Le retour d'attente et l'aide à la saisie sont écrits DEUX fois : c'est du code
-de DOM, lié au balisage de chaque site, et ce qui se dessine n'appartient pas au
-paquet.
-
-`toponyme.ts` chez edifiable répond à la même question que `francais.ts`, avec
-une AUTRE implémentation : 1 076 désaccords sur 32 735 noms de communes, tous
-sur l'article « La », qui ne se contracte pas. Les échanger change un texte
-visible en ligne : c'est une décision, pas une extraction.
-
-## Ce qu'il ne contient pas
-
-**Aucun composant, aucun style, aucune route.** Ce qui se dessine et ce qui
-s'adresse appartient au site qui consomme le paquet : deux sites n'ont ni les
-mêmes couleurs, ni les mêmes URL, ni la même façon de nommer une page.
-
-**Aucune donnée.** Le paquet interroge des API publiques ; il n'embarque ni la
-liste des communes ni celle des départements.
-
-**Aucune dépendance à un moteur d'exécution.** Pas de `cloudflare:workers`, pas
-de variable de build, pas de base de données : quinze modules qui n'utilisent que
-`fetch` et le calcul. C'est cette pureté qui rend le paquet transportable, et
-c'est le critère qui a servi à tracer sa frontière.
-
-## Installer
+## Install
 
 ```bash
 npm install github:florianmousseau/parcellaire
 ```
 
-## Un exemple
+Node 20 or later.
+
+## Example
 
 ```ts
 import { chercher } from 'parcellaire/ban';
 import { parcellesAutour, rattacherLaParcelle } from 'parcellaire/cadastre';
-import { dessiner, cadreSurLObjet } from 'parcellaire/plan';
+import { dessiner } from 'parcellaire/plan';
 
-const trouvailles = await chercher('22 rue Émile Chaillou Trélazé');
+const [adresse] = await chercher('20 avenue de Ségur Paris');
+const { lon, lat } = adresse.point;
+
+const autour = await parcellesAutour(lon, lat);
+const rattachement = rattacherLaParcelle(null, autour, lon, lat, null);
+
+const plan = rattachement ? dessiner(autour, rattachement.parcelle.idu) : null;
 ```
 
-## Mesurer
+## Gate
 
 ```bash
 npm run gate
 ```
 
-Format, lint, types, et les tests unitaires. Aucun test ne touche le réseau :
-ce qui se calcule se teste, ce qui s'appelle se mesure sur le site.
+Formatting, lint, type check and unit tests. No test touches the network. The
+same gate runs on every pull request.
 
-## Licence
+## License
 
-MIT.
+[MIT](LICENSE)
