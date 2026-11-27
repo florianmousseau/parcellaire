@@ -37,7 +37,7 @@ export interface Numero {
 	 *
 	 * C'est une DECLARATION, pas une mesure : quand elle existe, elle vaut plus
 	 * que la geometrie, et `rattacherLaParcelle` la garde meme sous le seuil de
-	 * couverture du batiment. Au 22 rue Emile Chaillou a Trelaze, elle nomme
+	 * couverture du batiment. Pour une maison de Trelaze, elle nomme
 	 * AD 526 quand le batiment est surtout sur AD 525 : les deux ensemble sont
 	 * la reponse, et c'est ce que le cadastre sait.
 	 */

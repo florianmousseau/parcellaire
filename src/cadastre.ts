@@ -68,7 +68,7 @@ const entier = (valeur: unknown): number | null =>
  * et rebranches dans la foulee. La boucle vaut d'etre ecrite, parce que c'est
  * le raisonnement qui etait faux, pas le code.
  *
- * Le soir, sur `edifiable.fr/plu/trelaze-49353/voie/rue-emile-chaillou?n=22`,
+ * Le soir, sur la page d'une adresse de Trelaze,
  * la page ne servait plus qu'AD 525 : la deuxieme parcelle du numero avait
  * disparu. J'ai retire `cf` dans `node_modules`, reconstruit, et les deux
  * parcelles sont revenues. Conclusion tiree : le cache d'arete change ce que
@@ -348,9 +348,8 @@ const parIdentifiant = (parcelles: readonly Parcelle[], idu: string): Parcelle |
  * l'appellent.
  *
  * UNE ADRESSE EN COUVRE SOUVENT DEUX, et la page n'en servait qu'une jusqu'au
- * 2026-09-07. Florian : *« le 22 rue Emile Chaillou a Trelaze a deux parcelles,
- * 525 et 526. Ma femme m'a dit que le cadastre le sait »*. Il le sait par deux
- * chemins, et il fallait les deux : le referentiel des batiments mesure la part
+ * 2026-09-07, quand une maison de Trelaze en couvre deux, AD 525 et AD 526.
+ * Le cadastre le sait par deux chemins, et il fallait les deux : le referentiel des batiments mesure la part
  * du batiment posee sur chaque parcelle (AD 525 83,9 %, AD 526 11,7 %, AD 984
  * 4,5 % - la troisieme est un debord, `PART_MINIMALE` la coupe), et la Base
  * Adresse Nationale DECLARE AD 526 pour ce numero. La reponse est leur union.
@@ -395,8 +394,8 @@ const parIdentifiant = (parcelles: readonly Parcelle[], idu: string): Parcelle |
  * Letanduere, 48 des 54.
  *
  * LA REGLE NE TOUCHE JAMAIS LA PRINCIPALE, et elle exempte ce que la BAN
- * declare AUSSI pour ce numero. C'est ce qui garde le cas fondateur : au 22 rue
- * Emile Chaillou, AD 526 est declaree au 22, elle reste. Au 12 de la meme rue,
+ * declare AUSSI pour ce numero. C'est ce qui garde le cas fondateur : a
+ * Trelaze, AD 526 est declaree au 22, elle reste. Au 12 de la meme rue,
  * AD 0516 a 11 % est declaree au 14 : elle part. A Renaze, le 3 perd AD 146,
  * qui est la parcelle du 1b - celle-la meme que ce depot avait deja nommee de
  * travers le 2026-09-06.

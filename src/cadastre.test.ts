@@ -12,8 +12,8 @@ import {
 
 /*
  * UNE ADRESSE PORTE SOUVENT DEUX PARCELLES, et la page n'en servait qu'une
- * jusqu'au 2026-09-07. Le cas temoin est reel : au 22 rue Emile Chaillou a
- * Trelaze, le referentiel des batiments mesure AD 525 a 83,9 %, AD 526 a 11,7 %
+ * jusqu'au 2026-09-07. Le cas temoin est reel : pour une maison
+ * de Trelaze, le referentiel des batiments mesure AD 525 a 83,9 %, AD 526 a 11,7 %
  * et AD 984 a 4,5 %, et la Base Adresse Nationale declare AD 526. Les deux
  * premieres sont les parcelles de l'adresse ; la troisieme est un debord.
  */
@@ -210,7 +210,7 @@ test('la parcelle que la BAN declare a un AUTRE numero est retiree', () => {
 });
 
 test('le cas fondateur survit : la BAN declare AD 526 au 22, elle reste', () => {
-	// Les deux parcelles du 22 rue Emile Chaillou. AD 526 est declaree a CE
+	// Les deux parcelles du cas temoin. AD 526 est declaree a CE
 	// numero : la coupe l epargne, meme si un voisin la declare aussi.
 	const r = rattacherLaParcelle(
 		null,
