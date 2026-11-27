@@ -67,7 +67,7 @@ export interface Voie {
 	 *
 	 * ET C EST BIEN CE CADRE-LA, PAS L ETENDUE DES NUMEROS. Mesure du meme jour :
 	 * rue du College, les huit numeros tiennent dans 22 x 112 m quand la boite
-	 * fait 120 x 221 m ; rue Pasteur a Vitry, 46 x 632 m contre 139 x 730 m. La
+	 * fait 120 x 221 m ; une voie de Vitry, 46 x 632 m contre 139 x 730 m. La
 	 * BAN pose donc une cinquantaine de metres autour des adresses, ce qui est
 	 * exactement ce qu il faut pour que les parcelles de bord soient entieres.
 	 * Cadrer au plus juste sur les numeros rendrait une bande trop etroite pour
@@ -137,7 +137,7 @@ interface NumeroBrut {
  * batiments numerise le TOIT et le cadastre suit le MUR, donc toute maison de
  * rue mord d'environ un metre chez son voisin et le recouvrement la designe.
  * La declaration, elle, nomme un numero. Voir `cadastre.rattacherLaParcelle`,
- * qui porte la mesure du 2026-09-08 et le cas du 128 rue de Letanduere.
+ * qui porte la mesure du 2026-09-08 et le cas temoin de Fillievres.
  *
  * LA DERIVATION VIT ICI, PAS DANS LES TROIS SURFACES QUI L'APPELLENT. La page
  * de voie, `lib/dossiers.ts` et le plan agrandi rattachent tous les trois ; une
@@ -464,7 +464,7 @@ export async function chercher(saisie: string, limite = 7): Promise<Trouvaille[]
 				insee: texte(f.properties?.citycode),
 				commune: texte(f.properties?.city),
 				// Sur une voie le nom est dans `name` ; sur un numero il est dans
-				// `street`, `name` portant alors « 29 Rue de la Petite Saussaie ».
+				// `street`, `name` portant alors « 11 Quai de Conti ».
 				voie: texte(f.properties?.street, type === 'street' ? texte(f.properties?.name) : ''),
 				numero: texte(f.properties?.housenumber),
 				point

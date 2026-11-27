@@ -3,19 +3,19 @@ import assert from 'node:assert/strict';
 import { batiAutour, batimentDuPoint, batimentDuTrait, type Batiment, type Trait } from './bati.ts';
 
 /*
- * Trois batiments releves le 2026-09-12 autour du 60 rue Pasteur a
- * Vitry-sur-Seine (BD TOPO, WFS de la Geoplateforme) : la maison du numero, une
- * annexe au fond de la parcelle, et un batiment dont l'usage n'est pas connu.
+ * Trois batiments dans la forme que rend la BD TOPO (WFS de la Geoplateforme),
+ * valeurs d'exemple : une maison, une annexe au fond de la parcelle, et un
+ * batiment dont l'usage n'est pas connu.
  */
 const carre = {
 	type: 'Polygon',
 	coordinates: [
 		[
-			[2.4057, 48.8016],
-			[2.4058, 48.8016],
-			[2.4058, 48.8017],
-			[2.4057, 48.8017],
-			[2.4057, 48.8016]
+			[2.4, 48.8],
+			[2.4001, 48.8],
+			[2.4001, 48.8001],
+			[2.4, 48.8001],
+			[2.4, 48.8]
 		]
 	]
 };
@@ -29,12 +29,12 @@ test('une maison : un logement, son annee de construction', () => {
 			nature: 'Indifférenciée',
 			nombre_de_logements: 1,
 			nombre_d_etages: 2,
-			hauteur: 8.6,
-			date_d_apparition: '1895-01-01Z'
+			hauteur: 7.5,
+			date_d_apparition: '1930-01-01Z'
 		})
 	);
 	assert.equal(b?.logements, 1);
-	assert.equal(b?.annee, 1895);
+	assert.equal(b?.annee, 1930);
 	assert.equal(b?.etages, 2);
 	assert.equal(b?.usage, 'Résidentiel');
 });

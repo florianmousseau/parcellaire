@@ -3,7 +3,7 @@
  *
  * Le Geoportail rend « PLUI GRAND-ORLY SEINE BIEVRE », la Base Adresse
  * Nationale a rendu « VITRY-SUR-SEINE » avant sa refonte, et le fichier des
- * ventes ecrit « 86 RUE PASTEUR ». Repris tels quels dans une phrase, ces noms
+ * ventes ecrit « QUAI DE CONTI ». Repris tels quels dans une phrase, ces noms
  * CRIENT, et un titre de page qui crie se remarque avant ce qu'il dit.
  *
  * Ce qui rend la regle non triviale : en francais, les particules d'un nom

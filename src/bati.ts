@@ -59,7 +59,7 @@ const texte = (valeur: unknown): string => (typeof valeur === 'string' ? valeur 
 const nombre = (valeur: unknown): number | null =>
 	typeof valeur === 'number' && Number.isFinite(valeur) ? valeur : null;
 
-/* « 1895-01-01Z » : l'annee seule a un sens, le jour est une convention du
+/* « 1930-01-01Z » : l'annee seule a un sens, le jour est une convention du
    fichier foncier qui la porte. */
 const anneeDe = (valeur: unknown): number | null => {
 	const annee = /^(\d{4})-/.exec(texte(valeur))?.[1];

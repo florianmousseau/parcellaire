@@ -217,7 +217,7 @@ test('sans contenance connue, aucun écart n est invente', () => {
 
 test('les sommets poses SUR une limite droite ne la coupent pas en morceaux', () => {
 	/*
-	 * Signale par Florian le 2026-09-06 : « on comprend pas pourquoi il y a
+	 * Signale le 2026-09-06 : « on comprend pas pourquoi il y a
 	 * plusieurs cotes sur une meme longueur ». Le trait cadastral pose des
 	 * sommets intermediaires sur une limite droite - une maison de vingt metres
 	 * a Vitry en portait douze la ou l'oeil en voit quatre.

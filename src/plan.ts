@@ -213,9 +213,9 @@ export function cadreSurLObjet(
 /**
  * LA MARGE AUTOUR DES PARCELLES D'UNE ADRESSE, en pixels du dessin.
  *
- * Florian, le 2026-09-07 : *« la carte doit etre mieux zoomee sur la et les
+ * Demande du 2026-09-07 : *« la carte doit etre mieux zoomee sur la et les
  * parcelles et mieux centree ; on ne voit pas de quelle parcelle on parle,
- * c'est trop petit »*. Il avait raison, et le defaut n'etait pas le zoom mais
+ * c'est trop petit »*. La remarque etait juste, et le defaut n'etait pas le zoom mais
  * la FACON de cadrer : la page ouvrait une fenetre de taille fixe - 165 m -
  * centree sur le point de l'ADRESSE, qui est pose au bord de la chaussee. La
  * parcelle y tombait donc decentree, a la taille que son hasard lui donnait.

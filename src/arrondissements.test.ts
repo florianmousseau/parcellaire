@@ -12,7 +12,7 @@ import {
  * Le plan cadastral ne connait ni « 75102 », ni « 69382 », ni « 13202 » : il
  * range leurs parcelles sous Paris, Lyon et Marseille. Une parcelle du 2e
  * arrondissement demandee sous son propre code rendait zero trait, donc null,
- * donc une page en 404 - `75102000AI0057`, le 15 rue du Croissant, le
+ * donc une page en 404 - `75102000AI0057`, le
  * 2026-09-08.
  */
 test('une parcelle de Paris, Lyon ou Marseille se demande sous sa ville', () => {

@@ -112,9 +112,9 @@ export const COTE_MINIMALE = 1.2;
 /*
  * DE COMBIEN UN SOMMET PEUT S'ECARTER DE LA DROITE SANS COUPER LE COTE.
  *
- * Signale par Florian le 2026-09-06 : *« on comprend pas pourquoi il y a
+ * Signale le 2026-09-06 : *« on comprend pas pourquoi il y a
  * plusieurs cotes sur une meme longueur, puis plus de cote, puis re une cote »*.
- * Il a raison, et ce n'est pas un defaut d'affichage : le trait cadastral pose
+ * La remarque est juste, et ce n'est pas un defaut d'affichage : le trait cadastral pose
  * des sommets intermediaires SUR une limite droite - une maison de vingt metres
  * a Vitry en portait douze la ou l'oeil en voit quatre. Chaque morceau recevait
  * sa cote, et les plus courts, ecartes, laissaient des trous.

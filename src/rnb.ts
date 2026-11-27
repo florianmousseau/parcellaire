@@ -4,20 +4,20 @@
  * POURQUOI UNE SOURCE DE PLUS ALORS QUE LE BATI EST DEJA LA. `lib/bati.ts` sert
  * la BD TOPO : elle porte la forme, la hauteur et les etages, et elle ne porte
  * AUCUNE adresse. Elle sait donc dessiner les batiments d'un pate de maisons,
- * jamais dire lequel est le numero 60. Le RNB, lui, est bati sur ce lien-la :
+ * jamais dire lequel est le numero 11. Le RNB, lui, est bati sur ce lien-la :
  * il rend un batiment PAR CLE D'ADRESSE.
  *
- * CE QUE CA REPARE, mesure le 2026-09-06 au 60 rue Pasteur a Vitry-sur-Seine.
+ * CE QUE CA REPARE, mesure le 2026-09-06 sur une adresse de Vitry-sur-Seine.
  * Le point d'une adresse est un point d'ENTREE, pose sur la voie, et le domaine
  * public n'est pas cadastre : aucune parcelle ne le contient. La page nommait
- * alors la parcelle la plus proche, et se trompait de parcelle - E 185, 234 m2,
- * quand le batiment du 60 est sur E 107, 372 m2. Demander le batiment de
+ * alors la parcelle la plus proche, et se trompait de parcelle - une voisine de
+ * 234 m2, quand le batiment est sur une parcelle de 372 m2. Demander le batiment de
  * l'adresse, puis la parcelle qui le porte, repond a la question que le lecteur
  * pose vraiment : « ce terrain-la, c'est quoi ».
  *
  * LA CLE EST DEJA DANS NOS MAINS, ET C'EST CE QUI REND L'APPEL EXACT. Le RNB
  * accepte `cle_interop_ban`, et `Numero.id` de `lib/ban.ts` EST cette cle
- * (`94081_7125_00060`, suffixe compris : `..._00032_bis`). Aucun appariement de
+ * (`75106_2296_00011`, suffixe compris : `..._00025_bis`). Aucun appariement de
  * texte, aucun rectangle a fouiller, aucune adresse a rapprocher - donc aucun
  * des pieges d'appariement que ce depot paie ailleurs.
  *
