@@ -48,34 +48,34 @@ test('une forme qui n est pas une reference ne rend rien', () => {
 });
 
 /*
- * CE QUE LES VOISINS DECLARENT. Rue de Letanduere a Angers, les 199 numeros
- * portent chacun UNE parcelle declaree : DM 0304 au 126, DM 0145 au 128.
+ * CE QUE LES VOISINS DECLARENT. Rue de Saint-Pol a Fillievres, les 34 numeros
+ * declarent chacun au moins une parcelle : A 0335 au 25, A 0654 au 25bis.
  */
-const numeroDe = (id: string, numero: number, parcelles: string[]): Numero => ({
+const numeroDe = (id: string, numero: number, suffixe: string, parcelles: string[]): Numero => ({
 	id,
 	numero,
-	suffixe: '',
-	codePostal: '49000',
-	point: { lon: -0.554296, lat: 47.458147 },
+	suffixe,
+	codePostal: '62770',
+	point: { lon: 2.159348, lat: 50.321768 },
 	parcelles
 });
 const VOIE = [
-	numeroDe('49007_4790_00126', 126, ['49007000DM0304']),
-	numeroDe('49007_4790_00128', 128, ['49007000DM0145']),
-	numeroDe('49007_4790_00130', 130, ['49007000DM0147'])
+	numeroDe('62335_0200_00025', 25, '', ['623350000A0335']),
+	numeroDe('62335_0200_00025_bis', 25, 'bis', ['623350000A0654']),
+	numeroDe('62335_0200_00027', 27, '', ['623350000A0516'])
 ];
 
 test('les parcelles des autres numeros excluent celles du numero vise', () => {
-	assert.deepEqual(parcellesDesAutresNumeros(VOIE, '49007_4790_00128').toSorted(), [
-		'49007000DM0147',
-		'49007000DM0304'
+	assert.deepEqual(parcellesDesAutresNumeros(VOIE, '62335_0200_00025').toSorted(), [
+		'623350000A0516',
+		'623350000A0654'
 	]);
 });
 
 test('un numero absent de la voie ne coupe rien', () => {
 	// Sinon une adresse inconnue de la BAN verrait TOUTE la voie comme voisine
 	// et perdrait ses secondaires sans qu aucune declaration le dise.
-	assert.deepEqual(parcellesDesAutresNumeros(VOIE, '49007_4790_09999'), []);
+	assert.deepEqual(parcellesDesAutresNumeros(VOIE, '62335_0200_09999'), []);
 });
 
 test('une liste de numeros qui n est pas celle de ce paquet passe quand meme', () => {
@@ -86,10 +86,10 @@ test('une liste de numeros qui n est pas celle de ce paquet passe quand meme', (
 	 * demande donc que ca.
 	 */
 	const ailleurs = [
-		{ id: 'a', parcelles: ['49007000DM0145'], point: [-0.5, 47.4], codePostal: null },
-		{ id: 'b', parcelles: ['49007000DM0304'], point: [-0.5, 47.4], codePostal: null }
+		{ id: 'a', parcelles: ['623350000A0335'], point: [-0.5, 47.4], codePostal: null },
+		{ id: 'b', parcelles: ['623350000A0654'], point: [-0.5, 47.4], codePostal: null }
 	];
-	assert.deepEqual(parcellesDesAutresNumeros(ailleurs, 'a'), ['49007000DM0304']);
+	assert.deepEqual(parcellesDesAutresNumeros(ailleurs, 'a'), ['623350000A0654']);
 });
 
 test('UNE BOITE ABSENTE N EST PAS UN POINT : sans quatre nombres a leur place, la commune n a pas de centre', async () => {
@@ -167,14 +167,14 @@ test('une voie lue en entier : numeros tries, suffixe, parcelles et cadre', asyn
 					suffixe: 'bis',
 					codePostal: '49000',
 					position: { coordinates: [-0.551, 47.471] },
-					parcelles: ['490070   DM0145', '490070000DM0146']
+					parcelles: ['490070   ZA0012', '490070000ZA0013']
 				},
 				{
 					id: '49007_1234_00003',
 					numero: 3,
 					codePostal: '49000',
 					position: { coordinates: [-0.552, 47.472] },
-					parcelles: ['490070   DM0304']
+					parcelles: ['490070   ZA0003']
 				}
 			]
 		})) as typeof fetch;
@@ -192,7 +192,7 @@ test('une voie lue en entier : numeros tries, suffixe, parcelles et cadre', asyn
 					suffixe: '',
 					codePostal: '49000',
 					point: { lon: -0.552, lat: 47.472 },
-					parcelles: ['49007000DM0304']
+					parcelles: ['49007000ZA0003']
 				},
 				{
 					id: '49007_1234_00012_bis',
@@ -200,7 +200,7 @@ test('une voie lue en entier : numeros tries, suffixe, parcelles et cadre', asyn
 					suffixe: 'bis',
 					codePostal: '49000',
 					point: { lon: -0.551, lat: 47.471 },
-					parcelles: ['49007000DM0145', '49007000DM0146']
+					parcelles: ['49007000ZA0012', '49007000ZA0013']
 				}
 			]
 		});
@@ -217,47 +217,47 @@ test('une recherche reussie rend l adresse et la voie, et encode la saisie accen
 		return Response.json({
 			features: [
 				{
-					geometry: { coordinates: [-0.551, 47.471] },
+					geometry: { coordinates: [2.3466, 48.8462] },
 					properties: {
-						id: '49007_1234_00012',
-						label: '12 Rue de l Eperon 49000 Angers',
+						id: '75105_1234_00021',
+						label: '21 Place du Pantheon 75005 Paris',
 						type: 'housenumber',
-						citycode: '49007',
-						city: 'Angers',
-						name: '12 Rue de l Eperon',
-						street: 'Rue de l Eperon',
-						housenumber: '12'
+						citycode: '75105',
+						city: 'Paris',
+						name: '21 Place du Pantheon',
+						street: 'Place du Pantheon',
+						housenumber: '21'
 					}
 				},
 				{
-					geometry: { coordinates: [-0.55, 47.47] },
+					geometry: { coordinates: [2.3465, 48.8463] },
 					properties: {
-						id: '49007_1234',
-						label: 'Rue de l Eperon 49000 Angers',
+						id: '75105_1234',
+						label: 'Place du Pantheon 75005 Paris',
 						type: 'street',
-						citycode: '49007',
-						city: 'Angers',
-						name: 'Rue de l Eperon'
+						citycode: '75105',
+						city: 'Paris',
+						name: 'Place du Pantheon'
 					}
 				}
 			]
 		});
 	}) as typeof fetch;
 	try {
-		const [adresse, rue] = await chercher('rue de l éperon');
-		assert.ok(demandees[0]?.includes('q=rue%20de%20l%20%C3%A9peron'), String(demandees[0]));
+		const [adresse, rue] = await chercher('place du panthéon');
+		assert.ok(demandees[0]?.includes('q=place%20du%20panth%C3%A9on'), String(demandees[0]));
 		assert.deepEqual(adresse, {
-			id: '49007_1234_00012',
-			libelle: '12 Rue de l Eperon 49000 Angers',
+			id: '75105_1234_00021',
+			libelle: '21 Place du Pantheon 75005 Paris',
 			type: 'housenumber',
-			insee: '49007',
-			commune: 'Angers',
-			voie: 'Rue de l Eperon',
-			numero: '12',
-			point: { lon: -0.551, lat: 47.471 }
+			insee: '75105',
+			commune: 'Paris',
+			voie: 'Place du Pantheon',
+			numero: '21',
+			point: { lon: 2.3466, lat: 48.8462 }
 		});
-		assert.equal(rue?.id, '49007_1234');
-		assert.equal(rue?.voie, 'Rue de l Eperon');
+		assert.equal(rue?.id, '75105_1234');
+		assert.equal(rue?.voie, 'Place du Pantheon');
 		assert.equal(rue?.numero, '');
 	} finally {
 		globalThis.fetch = avant;

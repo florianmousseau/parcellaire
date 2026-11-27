@@ -107,8 +107,8 @@ function auSegment(
  * La distance du point au BORD du contour, en metres.
  *
  * C'EST LA MESURE QUI DIT « LA PLUS PROCHE », ET LE CENTRE NE LA REMPLACE PAS.
- * Mesure du 2026-09-06 au 60 rue Pasteur a Vitry : la parcelle E 107 touche
- * l'adresse a 1 m et son centre est a 27 m, la voisine E 185 est a 3 m et son
+ * Mesure du 2026-09-06 sur une adresse de Vitry : la parcelle du batiment
+ * touche l'adresse a 1 m et son centre est a 27 m, la voisine est a 3 m et son
  * centre a 16 m. Comparer les centres elit donc la PETITE parcelle d'a cote
  * contre celle qui porte le batiment. Sur quatre numeros de cette seule voie,
  * la parcelle servie n'etait pas la plus proche.

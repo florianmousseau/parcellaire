@@ -180,33 +180,33 @@ test('ce qui n est pas un identifiant rend null', () => {
 /*
  * LE VOISIN N EST PAS UNE PARCELLE DE CETTE ADRESSE.
  *
- * Cas reel, releve le 2026-09-08 : au 128 rue de Letanduere a Angers, le
- * referentiel mesure DM 145 a 88,99 % et DM 304 a 10,07 %, et la BAN declare
- * DM 0304 au 126. Les 10 % sont une bande d un metre le long de la limite -
+ * Cas temoin, releve le 2026-11-27 : a la mairie de Fillievres, 25 rue de
+ * Saint-Pol, le referentiel mesure A 335 a 90,81 % et A 654 a 9,19 %, et la
+ * BAN declare A 0654 au 25bis. Les 9 % sont 4,7 m2 qui passent la limite -
  * le referentiel numerise le toit, le cadastre suit le mur.
  */
-const DM145 = parcelleDe('49007000DM0145', 204, 'Angers');
-const DM304 = parcelleDe('49007000DM0304', 112, 'Angers');
-const LETANDUERE = {
-	lon: -0.554296,
-	lat: 47.458147,
+const A335 = parcelleDe('623350000A0335', 1270, 'Fillièvres');
+const A654 = parcelleDe('623350000A0654', 529, 'Fillièvres');
+const MAIRIE = {
+	lon: 2.159267,
+	lat: 50.321888,
 	parcelles: [
-		{ idu: '49007000DM0145', part: 0.8899 },
-		{ idu: '49007000DM0304', part: 0.1007 }
+		{ idu: '623350000A0335', part: 0.9081 },
+		{ idu: '623350000A0654', part: 0.0919 }
 	]
 };
 
 test('la parcelle que la BAN declare a un AUTRE numero est retiree', () => {
 	const r = rattacherLaParcelle(
 		null,
-		[DM145, DM304],
-		-0.554296,
-		47.458147,
-		LETANDUERE,
-		['49007000DM0145'],
-		['49007000DM0304']
+		[A335, A654],
+		2.159348,
+		50.321768,
+		MAIRIE,
+		['623350000A0335'],
+		['623350000A0654']
 	);
-	assert.equal(r?.parcelle.idu, '49007000DM0145');
+	assert.equal(r?.parcelle.idu, '623350000A0335');
 	assert.deepEqual(r?.autres, []);
 });
 
@@ -230,33 +230,33 @@ test('le cas fondateur survit : la BAN declare AB 49 au 11, elle reste', () => {
 });
 
 test('la principale n est jamais coupee, meme declaree ailleurs', () => {
-	// Au 30 rue de Letanduere, la BAN nomme DK 127 quand le batiment est
-	// entier sur DK 128 : une adresse qui perdrait sa principale ne rendrait
+	// La BAN nomme parfois une parcelle voisine quand le batiment est entier
+	// sur une autre : une adresse qui perdrait sa principale ne rendrait
 	// plus rien. La regle ne touche que les secondaires.
 	const r = rattacherLaParcelle(
 		null,
-		[DM145, DM304],
-		-0.554296,
-		47.458147,
-		LETANDUERE,
+		[A335, A654],
+		2.159348,
+		50.321768,
+		MAIRIE,
 		[],
-		['49007000DM0145', '49007000DM0304']
+		['623350000A0335', '623350000A0654']
 	);
-	assert.equal(r?.parcelle.idu, '49007000DM0145');
+	assert.equal(r?.parcelle.idu, '623350000A0335');
 	assert.deepEqual(r?.autres, []);
 });
 
 test('sans liste de voisines, rien ne change', () => {
-	const r = rattacherLaParcelle(null, [DM145, DM304], -0.554296, 47.458147, LETANDUERE, []);
+	const r = rattacherLaParcelle(null, [A335, A654], 2.159348, 50.321768, MAIRIE, []);
 	assert.deepEqual(
 		r?.autres.map((a) => a.parcelle.idu),
-		['49007000DM0304']
+		['623350000A0654']
 	);
 });
 
 test('une section a une lettre perd son zero de comblement', () => {
 	// La source rend toujours deux signes : la section E arrive en `0E`, et
-	// « 0E 185 » ne s'ecrit sur aucun plan.
+	// « 0E 12 » ne s'ecrit sur aucun plan.
 	assert.equal(sectionLisible('0E'), 'E');
 	assert.equal(sectionLisible('0A'), 'A');
 	assert.equal(sectionLisible('AB'), 'AB');

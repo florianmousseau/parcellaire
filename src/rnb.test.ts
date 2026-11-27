@@ -79,7 +79,7 @@ test('une cle de Corse est une cle, une cle de metropole aussi', () => {
 	// L'outre-mer est en chiffres, il passait deja.
 	assert.ok(CLE_BAN.test('97209_1234_00007'));
 	// Le suffixe fait partie de la cle : `..._00032_bis`.
-	assert.ok(CLE_BAN.test('94081_7125_00032_bis'));
+	assert.ok(CLE_BAN.test('62335_0200_00025_bis'));
 });
 
 test('ce qui n est pas une cle est refuse', () => {
@@ -149,8 +149,8 @@ test('un batiment construit rend son point et ses parts, demande avec la cle ent
 		});
 	}) as typeof fetch;
 	try {
-		const batiment = await batimentDeLAdresse('94081_7125_00032_bis');
-		assert.equal(demandees[0]?.searchParams.get('cle_interop_ban'), '94081_7125_00032_bis');
+		const batiment = await batimentDeLAdresse('62335_0200_00025_bis');
+		assert.equal(demandees[0]?.searchParams.get('cle_interop_ban'), '62335_0200_00025_bis');
 		assert.equal(demandees[0]?.searchParams.get('withPlots'), '1');
 		assert.deepEqual(batiment, {
 			lon: 2.338444,

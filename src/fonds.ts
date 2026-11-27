@@ -13,7 +13,7 @@
  *   - LE PLAN IGN repond « ou est-ce », avec les rues nommees autour.
  *
  * NOTRE PROPRE DESSIN RESTE, ET IL REPREND LA MAIN QUAND L'IMAGE MANQUE.
- * Florian, le 2026-09-07 : *« remplace le type cadastre par le type officiel,
+ * Demande du 2026-09-07 : *« remplace le type cadastre par le type officiel,
  * le type officiel est bien meilleur »*. Le dessin garde deux emplois : le plan
  * COTE, qui a besoin d'un fond nu pour porter ses longueurs, et le repli des
  * dix-neuf communes que leur WMS refuse (`aUnPlanDgfip`). Il porte aussi, sur
@@ -60,8 +60,8 @@ interface Definition {
 	/*
 	 * CE QUE LA PAGE S'APPELLE SOUS CE FOND.
 	 *
-	 * « Plan de la parcelle CP 113 » au-dessus d'une photo aerienne est faux, et
-	 * Florian l'a demande dans l'autre sens : *« mettre les titres adaptes au
+	 * « Plan de la parcelle AB 52 » au-dessus d'une photo aerienne est faux, et
+	 * la demande allait dans l'autre sens : *« mettre les titres adaptes au
 	 * type d'image »*. Un titre qui ne decrit pas ce qu'on voit fait douter de
 	 * tout ce qui l'entoure.
 	 */
@@ -95,7 +95,7 @@ export const FONDS: readonly Definition[] = [
 	},
 	{
 		/*
-		 * LE PLAN COTE EST UN TYPE A PART, ET C'EST UNE DEMANDE DE FLORIAN.
+		 * LE PLAN COTE EST UN TYPE A PART, ET C'EST UNE DEMANDE DU PRODUIT.
 		 *
 		 * Les cotes ne se posent PAS sur les autres fonds : au-dessus d'une photo
 		 * ou d'un quartier entier, elles se chevauchent et n'apprennent rien. Ici
@@ -266,7 +266,7 @@ export function definitionDuFond(fond: Fond): Definition {
  *
  * Le `viewBox` du dessin fait 640 px de grand cote ; la figure, elle, occupe
  * pres de 1 000 px sur un ecran de bureau et le double sur un ecran a haute
- * densite. Une image demandee a 640 y est ETIREE, et Florian l'a vue tout de
+ * densite. Une image demandee a 640 y est ETIREE, et ca s'est vu tout de
  * suite : *« plan IGN et photo est floue sur PC »*. On la demande donc au
  * double, et le navigateur la reduit - une reduction est nette, un
  * agrandissement ne l'est jamais.

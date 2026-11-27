@@ -28,7 +28,7 @@ const parametres = (url: string) => new URLSearchParams(url.split('?')[1] ?? '')
 
 test('le cadastre est le plan de la DGFiP, demande a SA commune', () => {
 	/*
-	 * Demande de Florian le 2026-09-07 : leur plan remplace le notre au defaut.
+	 * Demande du 2026-09-07 : leur plan remplace le notre au defaut.
 	 * Le service a une adresse par commune, d'ou le code INSEE dans le chemin.
 	 */
 	const url = urlDuFond('cadastre', CADRE, 960, 540, '94081', sertLePlan);
@@ -78,7 +78,7 @@ test('l image est demandee en CRS:84, longitude d abord', () => {
 
 test('l image est demandee PLUS FINE que la boite, sans changer de cadre', () => {
 	/*
-	 * Signale par Florian le 2026-09-06 : « le plan IGN et la photo sont flous
+	 * Signale le 2026-09-06 : « le plan IGN et la photo sont flous
 	 * sur PC ». Le viewBox fait 640 px de grand cote, la figure en occupe pres de
 	 * 1 000 : demandee a 640, l'image est agrandie, et un agrandissement ne se
 	 * rattrape pas. On la demande au double et le navigateur la reduit.

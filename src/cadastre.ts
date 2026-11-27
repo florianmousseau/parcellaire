@@ -295,7 +295,7 @@ export function libelleParcelle(p: Parcelle): string {
  * Une section cadastrale, ecrite comme sur un plan.
  *
  * La source la rend TOUJOURS sur deux signes, en comblant a gauche par un zero :
- * la section E arrive en `0E`, et « 0E 185 » ne s'ecrit sur aucun plan. Les
+ * la section E arrive en `0E`, et « 0E 12 » ne s'ecrit sur aucun plan. Les
  * sections a deux lettres passent telles quelles.
  */
 export const sectionLisible = (section: string): string => section.replace(/^0(?=[A-Z])/, '');
@@ -367,17 +367,15 @@ const parIdentifiant = (parcelles: readonly Parcelle[], idu: string): Parcelle |
  *
  * ET LA PARCELLE DU VOISIN N'EST PAS LA SIENNE (2026-09-08).
  *
- * Florian, sur `aucadastre.fr/angers-49007/rue-de-letanduere-4790?n=128` :
- * *« 128 rue de letandure c dm 145 et dm 304 ? verifie ? »*. Non. Le
- * referentiel mesure DM 145 a 88,99 % et DM 304 a 10,07 %, et le second
- * chiffre est vrai sans etre un fait de propriete : le chevauchement est une
- * BANDE de 10,9 m de long sur 0,99 m de large le long de la limite mitoyenne.
- * Le referentiel numerise le TOIT, le cadastre suit le MUR ; un metre de debord
- * plus le calage des deux plans, et toute maison de rue mord chez son voisin.
- * Le 128ter deborde en retour sur DM 145, 9,1 m2, bande de 1,00 m.
+ * Cas temoin, la mairie de Fillievres, 25 rue de Saint-Pol : le referentiel
+ * mesure A 335 a 90,81 % et A 654 a 9,19 % (releve du 2026-11-27), et le
+ * second chiffre est vrai sans etre un fait de propriete : 4,7 m2 d'un
+ * batiment de 51,7 m2 passent la limite. Le referentiel numerise le TOIT, le
+ * cadastre suit le MUR ; un debord plus le calage des deux plans, et toute
+ * maison de rue mord chez son voisin.
  *
- * La BAN tranche, parce qu'elle DECLARE un proprietaire par numero : DM 0304
- * est declaree au 126, DM 0145 au 128. Une parcelle que la BAN nomme pour un
+ * La BAN tranche, parce qu'elle DECLARE un proprietaire par numero : A 0654
+ * est declaree au 25bis, A 0335 au 25. Une parcelle que la BAN nomme pour un
  * AUTRE numero de la voie ne peut pas etre une parcelle de ce numero-ci.
  *
  * Ce n'est pas un seuil de part qui repare ca. Mesure du 2026-09-08 sur neuf
@@ -391,17 +389,17 @@ const parIdentifiant = (parcelles: readonly Parcelle[], idu: string): Parcelle |
  *
  * Les deux populations se RECOUVRENT sur toute leur etendue : aucun seuil ne
  * les separe, seule la declaration le fait. 162 des 250 sont declarees a un
- * autre numero, 16 a ce numero-ci, 72 a personne. Sur la seule rue de
- * Letanduere, 48 des 54.
+ * autre numero, 16 a ce numero-ci, 72 a personne. Sur la seule voie
+ * d'Angers, 48 des 54.
  *
  * LA REGLE NE TOUCHE JAMAIS LA PRINCIPALE, et elle exempte ce que la BAN
  * declare AUSSI pour ce numero. C'est ce qui garde le cas temoin : a
  * la Monnaie de Paris, AB 49 est declaree au 11, elle reste. Une secondaire a
- * 11 % que la BAN declare au numero d'a cote, elle, part. A Renaze, le 3 perd AD 146,
- * qui est la parcelle du 1b - celle-la meme que ce depot avait deja nommee de
+ * 11 % que la BAN declare au numero d'a cote, elle, part. A Renaze, un numero perd la
+ * parcelle de son voisin - celle-la meme que ce depot avait deja nommee de
  * travers le 2026-09-06.
  *
- * Mesure du 2026-09-06 sur quatorze numeros de la rue Pasteur a Vitry : neuf
+ * Mesure du 2026-09-06 sur quatorze numeros d'une voie de Vitry : neuf
  * repondent par le batiment, quatre par le point, un seul par le bord. Mesure
  * du 2026-09-07 sur 72 adresses de six communes : 11 en couvrent plusieurs.
  */
@@ -531,15 +529,15 @@ export function parcelleQuiContient(
  *
  * POURQUOI CE REPLI EXISTE : le point d'une adresse a la Base Adresse Nationale
  * est un point d'ENTREE, souvent pose sur la voie - et le domaine public n'est
- * pas cadastre. Au 60 rue Pasteur a Vitry, aucune parcelle ne contient le
+ * pas cadastre. Sur une adresse de Vitry, aucune parcelle ne contient le
  * point, et le premier bloc de la page sortait vide alors que le zonage, lui,
  * repondait.
  *
  * LA DISTANCE SE MESURE AU BORD, ET LE CENTRE DONNAIT UNE AUTRE PARCELLE. Cette
  * fonction a compare les CENTRES jusqu'au 2026-09-06, ce qui elit la petite
- * parcelle d'a cote contre la grande qui touche l'adresse : au 60 rue Pasteur,
- * E 185 (234 m2, centre a 16 m, bord a 3 m) l'emportait sur E 107 (372 m2,
- * centre a 27 m, bord a 1 m) - et c'est E 107 qui porte le batiment. Sur quatre
+ * parcelle d'a cote contre la grande qui touche l'adresse : sur cette adresse,
+ * la voisine (234 m2, centre a 16 m, bord a 3 m) l'emportait sur la grande
+ * (372 m2, centre a 27 m, bord a 1 m) - et c'est la grande qui porte le batiment. Sur quatre
  * numeros de cette seule voie, la parcelle servie n'etait pas la plus proche,
  * et une autre etait a un metre. Voir `geometrie.distanceAuBord`.
  *

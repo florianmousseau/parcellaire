@@ -6,10 +6,10 @@ import { aire, enLambert93 } from './lambert.ts';
 /*
  * LE CAS QUI A OUVERT LE DEFAUT, le 2026-09-06.
  *
- * Au 60 rue Pasteur a Vitry-sur-Seine, le point de la Base Adresse Nationale
+ * Sur une adresse de Vitry-sur-Seine, le point de la Base Adresse Nationale
  * tombe sur la chaussee : aucune parcelle ne le contient. La page nommait alors
- * la parcelle dont le CENTRE etait le plus proche, et servait E 185 (234 m2)
- * quand le batiment du 60 est sur E 107 (372 m2).
+ * la parcelle dont le CENTRE etait le plus proche, et servait la petite voisine
+ * (234 m2) quand le batiment est sur la grande (372 m2).
  *
  * Les deux carres ci-dessous rejouent la forme exacte du piege, en degres et a
  * la latitude de Paris : une PETITE parcelle un peu en retrait, et une GRANDE
@@ -65,7 +65,7 @@ test('la distance au bord est nulle quand le point est sur le contour', () => {
  * Le centre de la petite parcelle est plus proche du point que celui de la
  * grande ; son BORD est plus loin. Une comparaison par les centres rend donc
  * l'autre reponse que celle du bord, et c'est exactement ce qui servait la
- * mauvaise parcelle au 60 rue Pasteur.
+ * mauvaise parcelle sur cette adresse.
  */
 test('le bord et le centre ne designent pas la meme parcelle', () => {
 	const bordPetite = distanceAuBord(PETITE, POINT.lon, POINT.lat);
