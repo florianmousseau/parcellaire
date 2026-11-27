@@ -30,14 +30,14 @@
  * IL REND AUSSI LES PARCELLES DU BATIMENT, ET LA PART POSEE SUR CHACUNE
  * ============================================================================
  *
- * Le 2026-09-07, une maison de Trelaze couvre deux parcelles, AD 525 et
- * AD 526, et le cadastre le sait. La page n'en servait qu'une - AD 525 -
+ * La Monnaie de Paris, 11 quai de Conti, couvre deux parcelles, AB 52 et
+ * AB 49, et le cadastre le sait. Jusqu'au 2026-09-07, la page n'en servait qu'une
  * parce qu'elle demandait au cadastre quelle parcelle CONTIENT le point representatif du batiment. Un point ne tombe que
  * dans une parcelle ; une maison, elle, s'etale.
  *
  * `?withPlots=1` rend `plots`, et chaque entree porte `bdg_cover_ratio` : la
- * part du BATIMENT posee sur cette parcelle. Au 22, AD 525 en porte 83,9 %,
- * AD 526 11,7 % et AD 984 4,5 %. Les deux premieres sont les parcelles de
+ * part du BATIMENT posee sur cette parcelle. Au 11, AB 52 en porte 73,9 %,
+ * AB 49 24,2 % et AB 5 0,14 % (releve du 2026-11-27). Les deux premieres sont les parcelles de
  * l'adresse, la troisieme est un debord de trait - et c'est ce chiffre qui les
  * separe, pas une distance.
  *
@@ -88,8 +88,8 @@ export const CLE_BAN = /^\d[\dAB]\d{3}_[0-9a-z]+_\d+/i;
  * 2 % et 30 %. Un debord de trait pese quelques millièmes ; une vraie parcelle
  * pese des dizaines de pour cent.
  *
- * CINQ POUR CENT, ET PAS DIX : le cas qui a ouvert le chantier tient a 11,7 %
- * (AD 526 a Trelaze), donc les deux seuils le gardent - mais un
+ * CINQ POUR CENT, ET PAS DIX : le cas qui a ouvert le chantier tenait a 11,7 %,
+ * donc les deux seuils le gardent - mais un
  * seuil haut ecarte en SILENCE, alors qu'une parcelle de trop se voit : la page
  * ecrit la part a cote de chaque reference, et le lecteur juge. Une parcelle
  * absente, elle, ne se discute pas.
@@ -98,7 +98,7 @@ export const PART_MINIMALE = 0.05;
 
 /** Une parcelle sous le batiment, avec la part du batiment qu'elle porte. */
 export interface ParcelleDuBatiment {
-	/** L'identifiant cadastral a quatorze signes : `49353000AD0525`. */
+	/** L'identifiant cadastral a quatorze signes : `75106000AB0052`. */
 	readonly idu: string;
 	/** La part du batiment posee sur cette parcelle, de 0 a 1. */
 	readonly part: number;

@@ -6,30 +6,33 @@ import { batimentDeLAdresse, CLE_BAN, parcellesRetenues, PART_MINIMALE } from '.
  * LE SEUIL EST DERIVE, PAS CHOISI : releve du 2026-09-07 sur 72 adresses de six
  * communes, 140 couples batiment-parcelle. La distribution a deux bosses - 57
  * parcelles sous 0,8 % et 72 au-dessus de 5 %, onze entre les deux. Le cas
- * temoin est une maison de Trelaze : AD 525 83,9 %, AD 526 11,7 %,
- * AD 984 4,5 %.
+ * temoin est la Monnaie de Paris, 11 quai de Conti (releve du 2026-11-27) :
+ * AB 52 73,9 %, AB 49 24,2 %, AB 5 0,14 %.
  */
 
 const plots = [
-	{ id: '49353000AD0526', bdg_cover_ratio: 0.1166 },
-	{ id: '49353000AD0525', bdg_cover_ratio: 0.8386 },
-	{ id: '49353000AD0984', bdg_cover_ratio: 0.0446 }
+	{ id: '75106000AB0049', bdg_cover_ratio: 0.2416 },
+	{ id: '75106000AB0052', bdg_cover_ratio: 0.7391 },
+	{ id: '75106000AB0005', bdg_cover_ratio: 0.0014 }
 ];
 
 test('les parcelles sortent de la plus couverte a la moins couverte', () => {
 	assert.deepEqual(
 		parcellesRetenues(plots).map((p) => p.idu),
-		['49353000AD0525', '49353000AD0526']
+		['75106000AB0052', '75106000AB0049']
 	);
 });
 
 test('un debord de trait est ecarte, une vraie parcelle est gardee', () => {
-	// AD 984 porte 4,5 % du batiment : c'est un debord. AD 526 en porte 11,7 %,
-	// et c'est bien une parcelle du 22 - le cadastre la nomme.
+	// AB 5 porte 0,14 % du batiment : c'est un debord. AB 49 en porte 24,2 %,
+	// et c'est bien une parcelle du 11 - la BAN la declare.
 	const gardees = parcellesRetenues(plots).map((p) => p.idu);
-	assert.ok(!gardees.includes('49353000AD0984'));
-	assert.ok(gardees.includes('49353000AD0526'));
-	assert.ok(PART_MINIMALE > 0.045 && PART_MINIMALE <= 0.1166);
+	assert.ok(!gardees.includes('75106000AB0005'));
+	assert.ok(gardees.includes('75106000AB0049'));
+	assert.ok(PART_MINIMALE > 0.0014 && PART_MINIMALE <= 0.2416);
+	// Les releves bornent aussi le seuil : les 57 debords du 2026-09-07 pesent
+	// moins de 0,76 %, et la plus petite secondaire a garder du 2026-09-08 pese 5,1 %.
+	assert.ok(PART_MINIMALE > 0.0076 && PART_MINIMALE <= 0.051);
 });
 
 test('une reponse sans parcelles n est pas une erreur', () => {
@@ -42,20 +45,20 @@ test('une reponse sans parcelles n est pas une erreur', () => {
 
 test('une entree sans identifiant ou sans part ne passe pas', () => {
 	assert.deepEqual(parcellesRetenues([{ id: '', bdg_cover_ratio: 0.9 }]), []);
-	assert.deepEqual(parcellesRetenues([{ id: '49353000AD0525' }]), []);
-	assert.deepEqual(parcellesRetenues([{ id: '49353000AD0525', bdg_cover_ratio: '0.9' }]), []);
+	assert.deepEqual(parcellesRetenues([{ id: '75106000AB0052' }]), []);
+	assert.deepEqual(parcellesRetenues([{ id: '75106000AB0052', bdg_cover_ratio: '0.9' }]), []);
 });
 
 test('une part au-dela de 1 ou infinie ne passe pas devant une part reelle', () => {
 	const gardees = parcellesRetenues([
-		{ id: '49353000AD0999', bdg_cover_ratio: Number.POSITIVE_INFINITY },
-		{ id: '49353000AD0998', bdg_cover_ratio: 1.5 },
-		{ id: '49353000AD0525', bdg_cover_ratio: 0.84 },
-		{ id: '49353000AD0526', bdg_cover_ratio: 1 }
+		{ id: '75106000AB0999', bdg_cover_ratio: Number.POSITIVE_INFINITY },
+		{ id: '75106000AB0998', bdg_cover_ratio: 1.5 },
+		{ id: '75106000AB0052', bdg_cover_ratio: 0.74 },
+		{ id: '75106000AB0049', bdg_cover_ratio: 1 }
 	]);
 	assert.deepEqual(
 		gardees.map((p) => p.idu),
-		['49353000AD0526', '49353000AD0525']
+		['75106000AB0049', '75106000AB0052']
 	);
 });
 
@@ -72,7 +75,7 @@ test('une part au-dela de 1 ou infinie ne passe pas devant une part reelle', () 
 test('une cle de Corse est une cle, une cle de metropole aussi', () => {
 	assert.ok(CLE_BAN.test('2a004_0970_00001'));
 	assert.ok(CLE_BAN.test('2B033_0010_00005'));
-	assert.ok(CLE_BAN.test('49353_0365_00022'));
+	assert.ok(CLE_BAN.test('75106_2296_00011'));
 	// L'outre-mer est en chiffres, il passait deja.
 	assert.ok(CLE_BAN.test('97209_1234_00007'));
 	// Le suffixe fait partie de la cle : `..._00032_bis`.
@@ -84,7 +87,7 @@ test('ce qui n est pas une cle est refuse', () => {
 	assert.equal(CLE_BAN.test('abcde_0970_00001'), false);
 	// Il n'y a que 2A et 2B : un departement en lettres ne s'invente pas.
 	assert.equal(CLE_BAN.test('2C004_0970_00001'), false);
-	assert.equal(CLE_BAN.test('49353_0365'), false);
+	assert.equal(CLE_BAN.test('75106_2296'), false);
 });
 
 const avecLaReponse = async (
@@ -141,7 +144,7 @@ test('un batiment construit rend son point et ses parts, demande avec la cle ent
 		return Response.json({
 			results: [
 				{ status: 'demolished', point: { coordinates: [1, 2] }, plots: [] },
-				{ status: 'constructed', point: { coordinates: [-0.5043, 47.4524] }, plots }
+				{ status: 'constructed', point: { coordinates: [2.338444, 48.856461] }, plots }
 			]
 		});
 	}) as typeof fetch;
@@ -150,11 +153,11 @@ test('un batiment construit rend son point et ses parts, demande avec la cle ent
 		assert.equal(demandees[0]?.searchParams.get('cle_interop_ban'), '94081_7125_00032_bis');
 		assert.equal(demandees[0]?.searchParams.get('withPlots'), '1');
 		assert.deepEqual(batiment, {
-			lon: -0.5043,
-			lat: 47.4524,
+			lon: 2.338444,
+			lat: 48.856461,
 			parcelles: [
-				{ idu: '49353000AD0525', part: 0.8386 },
-				{ idu: '49353000AD0526', part: 0.1166 }
+				{ idu: '75106000AB0052', part: 0.7391 },
+				{ idu: '75106000AB0049', part: 0.2416 }
 			]
 		});
 	} finally {
